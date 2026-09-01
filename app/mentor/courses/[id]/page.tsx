@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
-import { Plus, GripVertical, Image as ImageIcon, Type, CheckSquare, Trash2, ArrowLeft } from "lucide-react";
-import { getCourseById } from "@/lib/api";
-import type { CourseWithModules } from "@/types/course";
+import { Plus, GripVertical, Type, CheckSquare, Trash2, ArrowLeft, Link as LinkIcon, FileText, HelpCircle } from "lucide-react";
+import { getCourseById, saveCourseBuilder } from "@/lib/api";
+import type { CourseWithModules, Module } from "@/types/course";
 import { useToast } from "@/components/Toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,22 +18,76 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
   const { toast } = useToast();
   const router = useRouter();
 
-  // Mock builder state
-  const [modules, setModules] = useState([
-    { id: "1", title: "Pengenalan Dasar", lessons: [
-      { id: "l1", type: "text", title: "Apa itu VEGA?", content: "" }
-    ]}
-  ]);
+  // Builder state
+  const [modules, setModules] = useState<any[]>([]);
 
   useEffect(() => {
     getCourseById(resolvedParams.id)
-      .then(setCourse)
+      .then((data) => {
+        setCourse(data);
+        if (data.modules && data.modules.length > 0) {
+          // Map backend schema to frontend builder state
+          const mappedModules = data.modules.map((m: any) => ({
+            id: m.id,
+            title: m.title,
+            deadline: m.deadline || "",
+            lessons: m.lessons.map((l: any) => ({
+              id: l.id,
+              type: l.lesson_type.toLowerCase(),
+              title: l.title,
+              content: l.content || (l.lesson_type === 'QUIZ' ? "[]" : ""),
+              task_code: l.task_code || ""
+            }))
+          }));
+          setModules(mappedModules);
+        } else {
+          setModules([{ id: "1", title: "Pengenalan Dasar", deadline: "", lessons: [] }]);
+        }
+      })
       .catch(() => toast("error", "Error", "Gagal memuat course"))
       .finally(() => setLoading(false));
   }, [resolvedParams.id, toast]);
 
+  const handleSave = async () => {
+    try {
+      const payload = {
+        modules: modules.map((m, mIndex) => ({
+          id: m.id.includes("-") ? m.id : undefined, // Check if it's a UUID or timestamp
+          title: m.title,
+          order: mIndex + 1,
+          deadline: m.deadline || undefined,
+          lessons: m.lessons.map((l: any, lIndex: number) => ({
+            id: l.id.includes("-") ? l.id : undefined,
+            title: l.title,
+            content: l.content,
+            lesson_type: l.type.toUpperCase(),
+            order: lIndex + 1,
+            task_code: l.type === 'task' ? l.task_code || "" : undefined
+          }))
+        }))
+      };
+      await saveCourseBuilder(resolvedParams.id, payload);
+      toast("success", "Tersimpan", "Course berhasil disimpan");
+      router.push("/mentor/courses");
+    } catch (err) {
+      toast("error", "Error", "Gagal menyimpan course");
+    }
+  };
+
+  const handlePublish = async () => {
+    try {
+      // Import publishCourse dynamically or add to imports
+      const { publishCourse } = await import("@/lib/api");
+      await publishCourse(resolvedParams.id);
+      toast("success", "Dipublish", "Course berhasil dipublish");
+      router.push("/mentor/courses");
+    } catch (err) {
+      toast("error", "Error", "Gagal mempublish course");
+    }
+  };
+
   const addModule = () => {
-    setModules([...modules, { id: Date.now().toString(), title: "Modul Baru", lessons: [] }]);
+    setModules([...modules, { id: Date.now().toString(), title: "Modul Baru", deadline: "", lessons: [] }]);
   };
 
   const addLesson = (moduleId: string, type: string) => {
@@ -41,7 +95,7 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
       if (m.id === moduleId) {
         return {
           ...m,
-          lessons: [...m.lessons, { id: Date.now().toString(), type, title: `Lesson ${type} baru`, content: "" }]
+          lessons: [...m.lessons, { id: Date.now().toString(), type, title: `Lesson ${type} baru`, content: type === 'quiz' ? "[]" : "", task_code: "" }]
         };
       }
       return m;
@@ -80,12 +134,21 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
               <span className="px-2 py-0.5 rounded bg-accent-500/10 text-accent-400 text-xs font-medium">{course.status}</span>
             </p>
           </div>
-          <Button onClick={() => {
-            toast("success", "Tersimpan", "Course berhasil disimpan (Draft)");
-            router.push("/mentor/courses");
-          }}>
-            Simpan Perubahan
-          </Button>
+          <div className="flex gap-2">
+            <Link href={`/mentor/courses/${resolvedParams.id}/submissions`}>
+              <Button variant="ghost">
+                Lihat Submission
+              </Button>
+            </Link>
+            {course.status === "DRAFT" && (
+              <Button variant="secondary" onClick={handlePublish}>
+                Publish
+              </Button>
+            )}
+            <Button onClick={handleSave}>
+              Simpan Perubahan
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -100,9 +163,20 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                     className="flex-1 font-bold text-lg border-transparent hover:border-border-secondary focus:border-accent-500"
                   />
                 </div>
-                <button onClick={() => removeModule(mod.id)} className="text-error-400 p-2 hover:bg-error-500/10 rounded-lg ml-2">
-                  <Trash2 size={18} />
-                </button>
+                <div className="flex items-center gap-2 ml-2">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-xs text-text-muted whitespace-nowrap">Deadline:</label>
+                    <input
+                      type="datetime-local"
+                      value={mod.deadline || ""}
+                      onChange={(e) => setModules(modules.map(m => m.id === mod.id ? {...m, deadline: e.target.value} : m))}
+                      className="bg-primary-800 border border-border-secondary rounded-lg px-2 py-1 text-xs text-text-primary focus:border-amber-500 outline-none"
+                    />
+                  </div>
+                  <button onClick={() => removeModule(mod.id)} className="text-error-400 p-2 hover:bg-error-500/10 rounded-lg">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3 pl-8">
@@ -112,8 +186,10 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center gap-2">
                         {lesson.type === 'text' && <Type size={16} className="text-accent-400" />}
-                        {lesson.type === 'image' && <ImageIcon size={16} className="text-emerald-400" />}
+                        {lesson.type === 'file' && <FileText size={16} className="text-blue-400" />}
+                        {lesson.type === 'link' && <LinkIcon size={16} className="text-purple-400" />}
                         {lesson.type === 'task' && <CheckSquare size={16} className="text-amber-400" />}
+                        {lesson.type === 'quiz' && <HelpCircle size={16} className="text-rose-400" />}
                         <Input 
                           value={lesson.title}
                           onChange={(e) => {
@@ -124,15 +200,80 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                       </div>
                       
                       {lesson.type === 'text' && (
-                        <textarea className="w-full bg-surface-secondary border border-border-secondary rounded-lg p-3 text-sm focus:border-accent-500 outline-none" rows={3} placeholder="Tulis konten teks di sini..." />
+                        <textarea 
+                          value={lesson.content || ""}
+                          onChange={(e) => setModules(modules.map(m => m.id === mod.id ? {...m, lessons: m.lessons.map(l => l.id === lesson.id ? {...l, content: e.target.value} : l)} : m))}
+                          className="w-full bg-surface-secondary border border-border-secondary rounded-lg p-3 text-sm focus:border-accent-500 outline-none" rows={3} placeholder="Tulis konten teks di sini..." 
+                        />
                       )}
-                      {lesson.type === 'image' && (
-                        <div className="w-full h-32 border-2 border-dashed border-border-secondary rounded-lg flex items-center justify-center text-text-muted text-sm hover:border-accent-500 hover:text-accent-400 cursor-pointer transition-colors">
-                          <ImageIcon size={24} className="mb-2" /><br/>Klik untuk upload gambar
-                        </div>
+                      {(lesson.type === 'file' || lesson.type === 'link') && (
+                        <Input 
+                          placeholder="Masukkan URL / Link di sini..." 
+                          className="text-sm w-full"
+                          value={lesson.content || ""}
+                          onChange={(e) => setModules(modules.map(m => m.id === mod.id ? {...m, lessons: m.lessons.map(l => l.id === lesson.id ? {...l, content: e.target.value} : l)} : m))}
+                        />
                       )}
                       {lesson.type === 'task' && (
-                        <Input placeholder="Tulis instruksi tugas di sini..." className="text-sm" />
+                        <div className="space-y-3 border-t border-border-secondary pt-3 mt-3">
+                          <Input 
+                            placeholder="Tulis instruksi tugas di sini..." 
+                            className="text-sm w-full"
+                            value={lesson.content || ""}
+                            onChange={(e) => setModules(modules.map(m => m.id === mod.id ? {...m, lessons: m.lessons.map(l => l.id === lesson.id ? {...l, content: e.target.value} : l)} : m))}
+                          />
+                          <Input 
+                            placeholder="Kode Absen / Verifikasi (e.g. VEGA-123)" 
+                            className="text-sm w-full border-amber-500/50 focus:border-amber-500"
+                            value={lesson.task_code || ""}
+                            onChange={(e) => setModules(modules.map(m => m.id === mod.id ? {...m, lessons: m.lessons.map(l => l.id === lesson.id ? {...l, task_code: e.target.value} : l)} : m))}
+                          />
+                        </div>
+                      )}
+                      {lesson.type === 'quiz' && (
+                        <div className="space-y-3 border-t border-border-secondary pt-3 mt-3">
+                          {(() => {
+                            let qList: any[] = [];
+                            try { qList = JSON.parse(lesson.content || "[]"); } catch (e) {}
+                            
+                            const updateQuiz = (newQList: any[]) => {
+                              setModules(modules.map(m => m.id === mod.id ? {...m, lessons: m.lessons.map(l => l.id === lesson.id ? {...l, content: JSON.stringify(newQList)} : l)} : m));
+                            };
+                            return (
+                              <div className="space-y-4">
+                                {qList.map((q: any, i: number) => (
+                                  <div key={i} className="p-3 bg-surface-secondary rounded border border-border-secondary relative">
+                                    <button onClick={() => updateQuiz(qList.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 text-text-muted hover:text-error-400"><Trash2 size={14}/></button>
+                                    <div className="text-xs font-semibold text-text-muted mb-2">Pertanyaan {i + 1} ({q.type === 'mcq' ? 'Pilihan Ganda' : 'Isian Singkat'})</div>
+                                    <Input value={q.question || ""} onChange={(e) => {
+                                      const n = [...qList]; n[i].question = e.target.value; updateQuiz(n);
+                                    }} placeholder="Masukkan pertanyaan..." className="mb-3" />
+                                    
+                                    {q.type === 'mcq' && (
+                                      <div className="space-y-2 pl-4">
+                                        {["A", "B", "C", "D", "E"].map((opt, optIdx) => (
+                                          <div key={optIdx} className="flex items-center gap-2">
+                                            <span className="text-xs font-bold w-4">{opt}.</span>
+                                            <Input value={q.options?.[optIdx] || ""} onChange={(e) => {
+                                              const n = [...qList]; 
+                                              if(!n[i].options) n[i].options = ["","","","",""];
+                                              n[i].options[optIdx] = e.target.value;
+                                              updateQuiz(n);
+                                            }} placeholder={`Opsi ${opt}`} className="flex-1 text-xs" />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="secondary" onClick={() => updateQuiz([...qList, { type: 'mcq', question: '', options: ["","","","",""] }])}>+ Pilihan Ganda</Button>
+                                  <Button size="sm" variant="secondary" onClick={() => updateQuiz([...qList, { type: 'short', question: '' }])}>+ Isian Singkat</Button>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
                       )}
                     </div>
                     <button onClick={() => removeLesson(mod.id, lesson.id)} className="text-error-400 p-1.5 hover:bg-error-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
@@ -146,11 +287,17 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                   <button onClick={() => addLesson(mod.id, 'text')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-accent-500 transition-colors">
                     <Type size={14} className="text-accent-400" /> Teks
                   </button>
-                  <button onClick={() => addLesson(mod.id, 'image')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-emerald-500 transition-colors">
-                    <ImageIcon size={14} className="text-emerald-400" /> Gambar
+                  <button onClick={() => addLesson(mod.id, 'file')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-blue-500 transition-colors">
+                    <FileText size={14} className="text-blue-400" /> File
+                  </button>
+                  <button onClick={() => addLesson(mod.id, 'link')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-purple-500 transition-colors">
+                    <LinkIcon size={14} className="text-purple-400" /> Link
                   </button>
                   <button onClick={() => addLesson(mod.id, 'task')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-amber-500 transition-colors">
                     <CheckSquare size={14} className="text-amber-400" /> Tugas
+                  </button>
+                  <button onClick={() => addLesson(mod.id, 'quiz')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-rose-500 transition-colors">
+                    <HelpCircle size={14} className="text-rose-400" /> Quiz
                   </button>
                 </div>
               </div>

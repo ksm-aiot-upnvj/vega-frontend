@@ -41,6 +41,7 @@ const memberNav: NavItem[] = [
 const mentorNav: NavItem[] = [
   { label: "Dashboard", href: "/mentor", icon: LayoutDashboard },
   { label: "My Courses", href: "/mentor/courses", icon: GraduationCap },
+  { label: "Submissions", href: "/mentor/submissions", icon: ClipboardList },
   { label: "Profile", href: "/profile", icon: User },
 ];
 

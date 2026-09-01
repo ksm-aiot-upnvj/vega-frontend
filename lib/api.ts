@@ -111,6 +111,12 @@ export async function deleteCourse(id: string): Promise<Course> {
   });
 }
 
+export async function publishCourse(id: string): Promise<Course> {
+  return apiFetch<Course>(`/api/v1/courses/${id}/publish`, {
+    method: "PUT",
+  });
+}
+
 export async function getCategories(): Promise<Category[]> {
   return apiFetch<Category[]>("/api/v1/categories/");
 }
@@ -131,12 +137,37 @@ export async function enrollCourse(courseId: string): Promise<Enrollment> {
 }
 
 // ============================================
-// Progress API (Mocked for now as we didn't implement lesson completion)
+// Progress API
 // ============================================
 
-export async function completeLesson(lessonId: string): Promise<{ success: boolean }> {
-  // Replace with real API endpoint later
-  return { success: true };
+export async function getCourseProgress(courseId: string): Promise<Record<string, { is_completed: boolean; completed_at: string | null; answers: string | null; score: number | null }>> {
+  return apiFetch(`/api/v1/courses/${courseId}/progress`);
+}
+
+export async function getCourseSubmissions(courseId: string): Promise<any[]> {
+  return apiFetch(`/api/v1/courses/${courseId}/submissions`);
+}
+
+export async function getMentorSubmissions(): Promise<any[]> {
+  return apiFetch(`/api/v1/lessons/me/submissions`);
+}
+
+export async function scoreSubmission(submissionId: string, score: number): Promise<{ success: boolean; score: number }> {
+  return apiFetch(`/api/v1/lessons/me/submissions/${submissionId}/score`, {
+    method: "PUT",
+    body: JSON.stringify({ score }),
+  });
+}
+
+// ============================================
+// Builder API
+// ============================================
+
+export async function saveCourseBuilder(courseId: string, payload: any): Promise<CourseWithModules> {
+  return apiFetch<CourseWithModules>(`/api/v1/courses/${courseId}/builder`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
 }
 
 // ============================================
@@ -195,6 +226,13 @@ export async function deleteUser(id: string): Promise<User> {
     method: "DELETE",
   });
 }
+
+export const completeLesson = async (lessonId: string, taskCode?: string, answers?: string) => {
+  return apiFetch<{ success: boolean }>(`/api/v1/lessons/${lessonId}/complete`, {
+    method: 'POST',
+    body: JSON.stringify({ task_code: taskCode, answers }),
+  });
+};
 
 export const updateMe = async (data: any) => {
   return apiFetch<User>("/api/v1/users/me", {

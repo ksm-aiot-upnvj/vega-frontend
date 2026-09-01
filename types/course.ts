@@ -2,7 +2,7 @@
 // VEGA LMS — Course, Module, Lesson Types
 // ============================================
 
-export type LessonType = "TEXT" | "VIDEO" | "PDF" | "FILE" | "LINK";
+export type LessonType = "TEXT" | "VIDEO" | "PDF" | "FILE" | "LINK" | "TASK" | "QUIZ";
 
 export type CourseLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
@@ -43,6 +43,7 @@ export interface Module {
   title: string;
   description?: string;
   order: number;
+  deadline?: string | null;
   lessons: Lesson[];
   created_at: string;
 }
@@ -58,6 +59,7 @@ export interface Lesson {
   order: number;
   duration: number; // in minutes
   is_completed?: boolean;
+  task_code?: string;
   created_at: string;
 }
 
