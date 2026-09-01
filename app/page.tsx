@@ -16,9 +16,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 flex items-center justify-between h-16 px-6 lg:px-12 bg-surface-primary/80 backdrop-blur-md border-b border-border-secondary">
         <Link href="/" className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-accent-600 to-accent-500 shadow-md">
-            <span className="text-white font-bold text-sm">V</span>
-          </div>
+          <img src="/logo.png" alt="Vega Logo" className="w-9 h-9 object-contain" />
           <span className="text-xl font-bold text-gradient">VEGA</span>
         </Link>
         <div className="flex items-center gap-3">
@@ -109,9 +107,7 @@ export default function LandingPage() {
       <footer className="py-8 px-6 lg:px-12 border-t border-border-secondary">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-accent-600 to-accent-500">
-              <span className="text-white font-bold text-xs">V</span>
-            </div>
+            <img src="/logo.png" alt="Vega Logo" className="w-7 h-7 object-contain" />
             <span className="text-sm font-semibold text-text-secondary">
               VEGA LMS
             </span>

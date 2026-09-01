@@ -70,9 +70,7 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
       {/* Logo */}
       <div className="flex items-center h-16 px-4 border-b border-border-secondary">
         <Link href="/dashboard" className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-accent-600 to-accent-500 shadow-md flex-shrink-0">
-            <span className="text-white font-bold text-sm">V</span>
-          </div>
+          <img src="/logo.png" alt="Vega Logo" className="w-9 h-9 object-contain flex-shrink-0" />
           {!collapsed && (
             <span className="text-lg font-bold text-gradient truncate">
               VEGA

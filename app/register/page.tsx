@@ -68,9 +68,7 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 mb-4">
-            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-600 to-accent-500 shadow-lg shadow-accent-500/20">
-              <span className="text-white font-bold text-xl">V</span>
-            </div>
+            <img src="/logo.png" alt="Vega Logo" className="w-12 h-12 object-contain drop-shadow-md" />
           </Link>
           <h1 className="text-2xl font-bold text-text-primary">
             Buat Akun Baru

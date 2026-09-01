@@ -69,7 +69,7 @@ export default function MentorDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 stagger">
+        <div className="grid grid-cols-2 gap-4 stagger">
           {[
             {
               label: "Course Aktif",
@@ -84,13 +84,6 @@ export default function MentorDashboard() {
               icon: Users,
               color: "text-emerald-400",
               bg: "bg-emerald-500/10",
-            },
-            {
-              label: "Rating",
-              value: courses.length > 0 ? "4.8" : "-", // Mock rating as backend doesn't support reviews yet
-              icon: Star,
-              color: "text-amber-400",
-              bg: "bg-amber-500/10",
             },
           ].map((stat) => (
             <div key={stat.label} className="glass-card p-5">
