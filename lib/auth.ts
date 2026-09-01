@@ -59,16 +59,22 @@ export function getUserRole(): UserRole | null {
 
 // ---- Logout ----
 
-export function logout(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_KEY);
-  localStorage.removeItem(USER_KEY);
-}
-
-// ---- Login Helper ----
-
 export function saveAuthData(token: string, refreshToken: string, user: User): void {
   setToken(token);
   setRefreshToken(refreshToken);
   setStoredUser(user);
+  
+  // Set cookie for middleware
+  document.cookie = `vega_token=${token}; path=/; max-age=604800; samesite=lax`;
+}
+
+// ---- Logout ----
+
+export function logout(): void {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_KEY);
+  localStorage.removeItem(USER_KEY);
+  
+  // Remove cookie
+  document.cookie = `vega_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }

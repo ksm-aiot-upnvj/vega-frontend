@@ -41,7 +41,7 @@ const memberNav: NavItem[] = [
 const mentorNav: NavItem[] = [
   { label: "Dashboard", href: "/mentor", icon: LayoutDashboard },
   { label: "My Courses", href: "/mentor/courses", icon: GraduationCap },
-  { label: "Profile", href: "/mentor/profile", icon: User },
+  { label: "Profile", href: "/profile", icon: User },
 ];
 
 const adminNav: NavItem[] = [
@@ -115,16 +115,23 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
 
       {/* Logout */}
       <div className="p-3 border-t border-border-secondary">
-        <Link
-          href="/login"
+        <button
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              import("@/lib/auth").then(({ logout }) => {
+                logout();
+                window.location.href = "/login";
+              });
+            }
+          }}
           className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-error-400 hover:bg-error-500/10 transition-all duration-200",
+            "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-error-400 hover:bg-error-500/10 transition-all duration-200",
             collapsed && "justify-center px-0"
           )}
         >
           <LogOut size={20} className="flex-shrink-0" />
           {!collapsed && <span>Keluar</span>}
-        </Link>
+        </button>
       </div>
 
       {/* Collapse Toggle */}

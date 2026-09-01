@@ -1,32 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import DataTable from "@/components/DataTable";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import Modal from "@/components/Modal";
 import { useToast } from "@/components/Toast";
-import { mockCourses } from "@/lib/mock-data";
 import { LEVEL_LABELS, LEVEL_COLORS, formatDateShort, cn } from "@/lib/utils";
 import { Plus, Edit, Trash2, Users } from "lucide-react";
 import type { Course } from "@/types/course";
+import { getCourses, createCourse, getCategories } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 export default function MentorCoursesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [courseTitle, setCourseTitle] = useState("");
+  const [courseForm, setCourseForm] = useState({ title: "", description: "", level: "BEGINNER", category_id: "" });
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
   const { toast } = useToast();
-  const courses = mockCourses;
+  const router = useRouter();
+  
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleCreate = (e: React.FormEvent) => {
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      const data = await getCourses();
+      // Assuming backend already filters if needed, or we filter mentor's courses
+      setCourses(data);
+    } catch (err) {
+      toast("error", "Error", "Gagal memuat course");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const data = await getCategories();
+      setCategories(data);
+      if (data.length > 0) {
+        setCourseForm(prev => ({ ...prev, category_id: data[0].id }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+    fetchCategories();
+  }, []);
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!courseTitle.trim()) {
-      toast("error", "Error", "Judul course tidak boleh kosong");
+    if (!courseForm.title.trim() || !courseForm.category_id) {
+      toast("error", "Error", "Data wajib diisi");
       return;
     }
-    toast("success", "Berhasil", "Course baru telah dibuat");
-    setIsModalOpen(false);
-    setCourseTitle("");
+    try {
+      const newCourse = await createCourse({
+        title: courseForm.title,
+        description: courseForm.description,
+        level: courseForm.level as any,
+        category_id: courseForm.category_id
+      });
+      toast("success", "Berhasil", "Course baru telah dibuat");
+      setIsModalOpen(false);
+      router.push(`/mentor/courses/${newCourse.id}`);
+    } catch (err) {
+      toast("error", "Error", "Gagal membuat course");
+    }
   };
 
   const columns = [
@@ -68,15 +113,6 @@ export default function MentorCoursesPage() {
       ),
     },
     {
-      key: "lessons",
-      header: "Lesson",
-      render: (course: Course) => (
-        <span className="text-sm text-text-secondary">
-          {course.total_lessons}
-        </span>
-      ),
-    },
-    {
       key: "status",
       header: "Status",
       render: (course: Course) => (
@@ -99,16 +135,19 @@ export default function MentorCoursesPage() {
       header: "Dibuat",
       render: (course: Course) => (
         <span className="text-xs text-text-muted">
-          {formatDateShort(course.created_at)}
+          {course.created_at ? formatDateShort(course.created_at) : "-"}
         </span>
       ),
     },
     {
       key: "actions",
       header: "",
-      render: () => (
+      render: (course: Course) => (
         <div className="flex items-center gap-1">
-          <button className="p-1.5 rounded-lg text-text-muted hover:text-accent-400 hover:bg-accent-500/10 transition-colors cursor-pointer">
+          <button 
+            onClick={() => router.push(`/mentor/courses/${course.id}`)}
+            className="p-1.5 rounded-lg text-text-muted hover:text-accent-400 hover:bg-accent-500/10 transition-colors cursor-pointer"
+          >
             <Edit size={14} />
           </button>
           <button className="p-1.5 rounded-lg text-text-muted hover:text-error-400 hover:bg-error-500/10 transition-colors cursor-pointer">
@@ -137,21 +176,60 @@ export default function MentorCoursesPage() {
           </Button>
         </div>
 
-        <DataTable
-          columns={columns}
-          data={courses}
-          keyExtractor={(c) => c.id}
-          emptyMessage="Belum ada course"
-        />
+        {loading ? (
+          <p className="text-text-muted">Loading...</p>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={courses}
+            keyExtractor={(c) => c.id}
+            emptyMessage="Belum ada course"
+          />
+        )}
 
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Buat Course Baru">
           <form onSubmit={handleCreate} className="space-y-4">
             <Input
               label="Judul Course"
               placeholder="Masukkan judul course..."
-              value={courseTitle}
-              onChange={(e) => setCourseTitle(e.target.value)}
+              value={courseForm.title}
+              onChange={(e) => setCourseForm({ ...courseForm, title: e.target.value })}
             />
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-text-secondary">Deskripsi</label>
+              <textarea
+                className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                rows={3}
+                value={courseForm.description}
+                onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-text-secondary">Kategori</label>
+                <select
+                  className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                  value={courseForm.category_id}
+                  onChange={(e) => setCourseForm({ ...courseForm, category_id: e.target.value })}
+                >
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-text-secondary">Level</label>
+                <select
+                  className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                  value={courseForm.level}
+                  onChange={(e) => setCourseForm({ ...courseForm, level: e.target.value })}
+                >
+                  <option value="BEGINNER">Pemula</option>
+                  <option value="INTERMEDIATE">Menengah</option>
+                  <option value="ADVANCED">Mahir</option>
+                </select>
+              </div>
+            </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
                 Batal

@@ -1,18 +1,54 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import CourseCard from "@/components/CourseCard";
 import Button from "@/components/Button";
-import { mockCourses } from "@/lib/mock-data";
+import { getCourses, getCurrentUser } from "@/lib/api";
+import type { Course } from "@/types/course";
+import type { User } from "@/types/user";
+import { useToast } from "@/components/Toast";
 import { Plus, BookOpen, Users, Star, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function MentorDashboard() {
-  const mentorCourses = mockCourses.slice(0, 4);
-  const totalStudents = mentorCourses.reduce(
-    (sum, c) => sum + c.enrolled_count,
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    Promise.all([
+      getCurrentUser(),
+      getCourses().catch(() => [])
+    ])
+    .then(([user, allCourses]) => {
+      setCurrentUser(user);
+      // Filter courses where the mentor is the current user
+      const myCourses = allCourses.filter(c => c.mentor_id === user.id);
+      setCourses(myCourses);
+    })
+    .catch(() => {
+      toast("error", "Error", "Gagal memuat data dashboard");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  }, [toast]);
+
+  const mentorCourses = courses.slice(0, 4);
+  const totalStudents = courses.reduce(
+    (sum, c) => sum + (c.enrolled_count || 0),
     0
   );
+
+  if (loading) {
+    return (
+      <DashboardLayout role="MENTOR">
+        <div className="text-text-muted">Loading data...</div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="MENTOR">
@@ -37,7 +73,7 @@ export default function MentorDashboard() {
           {[
             {
               label: "Course Aktif",
-              value: mentorCourses.length,
+              value: courses.length,
               icon: BookOpen,
               color: "text-accent-400",
               bg: "bg-accent-500/10",
@@ -51,7 +87,7 @@ export default function MentorDashboard() {
             },
             {
               label: "Rating",
-              value: "4.8",
+              value: courses.length > 0 ? "4.8" : "-", // Mock rating as backend doesn't support reviews yet
               icon: Star,
               color: "text-amber-400",
               bg: "bg-amber-500/10",
@@ -84,11 +120,15 @@ export default function MentorDashboard() {
               Lihat Semua <ArrowRight size={14} />
             </Link>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
-            {mentorCourses.slice(0, 3).map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </div>
+          {mentorCourses.length === 0 ? (
+            <p className="text-sm text-text-muted">Kamu belum memiliki course. Mulai buat course barumu!</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
+              {mentorCourses.slice(0, 3).map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent Activity */}
@@ -97,49 +137,8 @@ export default function MentorDashboard() {
             Aktivitas Siswa Terkini
           </h2>
           <div className="space-y-4">
-            {[
-              {
-                student: "Aisyah Rahmawati",
-                action: "Menyelesaikan lesson GPIO & Digital I/O",
-                course: "IoT Fundamentals",
-                time: "2 jam lalu",
-              },
-              {
-                student: "Budi Santoso",
-                action: "Mengumpulkan assignment Linear Regression",
-                course: "Machine Learning",
-                time: "5 jam lalu",
-              },
-              {
-                student: "Cindy Putri",
-                action: "Menyelesaikan Quiz Pengantar IoT",
-                course: "IoT Fundamentals",
-                time: "1 hari lalu",
-              },
-            ].map((activity, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 pb-4 border-b border-border-secondary last:border-0 last:pb-0"
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-secondary-600 text-xs font-medium text-secondary-100 flex-shrink-0">
-                  {activity.student
-                    .split(" ")
-                    .map((w) => w[0])
-                    .join("")
-                    .slice(0, 2)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-text-primary">
-                    <span className="font-medium">{activity.student}</span> —{" "}
-                    {activity.action}
-                  </p>
-                  <p className="text-xs text-text-muted">{activity.course}</p>
-                </div>
-                <span className="text-xs text-text-muted whitespace-nowrap">
-                  {activity.time}
-                </span>
-              </div>
-            ))}
+            <p className="text-sm text-text-muted italic">Belum ada aktivitas siswa.</p>
+            {/* Mocked activities are removed per user request */}
           </div>
         </div>
       </div>

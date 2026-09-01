@@ -1,8 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import EmptyState from "@/components/EmptyState";
-import { mockAssignments } from "@/lib/mock-data";
+import { getAssignments } from "@/lib/api";
 import { STATUS_LABELS, cn, formatDateShort } from "@/lib/utils";
 import {
   ClipboardList,
@@ -14,7 +15,8 @@ import {
   GitBranch,
   File,
 } from "lucide-react";
-import type { SubmissionStatus } from "@/types/assignment";
+import type { AssignmentWithSubmission, SubmissionStatus } from "@/types/assignment";
+import { useToast } from "@/components/Toast";
 
 const statusConfig: Record<
   SubmissionStatus,
@@ -39,7 +41,19 @@ const statusConfig: Record<
 };
 
 export default function AssignmentsPage() {
-  const assignments = mockAssignments;
+  const [assignments, setAssignments] = useState<AssignmentWithSubmission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    getAssignments()
+      .then(setAssignments)
+      .catch(() => {
+        // Suppress error if assignments API is not fully implemented yet
+        setAssignments([]);
+      })
+      .finally(() => setLoading(false));
+  }, [toast]);
 
   return (
     <DashboardLayout>
@@ -53,7 +67,9 @@ export default function AssignmentsPage() {
           </p>
         </div>
 
-        {assignments.length === 0 ? (
+        {loading ? (
+          <div className="text-text-muted">Loading assignments...</div>
+        ) : assignments.length === 0 ? (
           <EmptyState
             icon={<ClipboardList className="h-7 w-7 text-text-muted" />}
             title="Belum ada assignment"
@@ -73,7 +89,7 @@ export default function AssignmentsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs text-text-muted">
-                          {assignment.course_title}
+                          {assignment.course_title || "Course"}
                         </span>
                       </div>
                       <h3 className="text-base font-semibold text-text-primary">
@@ -106,7 +122,7 @@ export default function AssignmentsPage() {
                     <span>Maks. Nilai: {assignment.max_score}</span>
                     <span className="flex items-center gap-1">
                       Format:{" "}
-                      {assignment.accepted_types.map((t) => t).join(", ")}
+                      {assignment.accepted_types?.map((t) => t).join(", ") || "Semua"}
                     </span>
                   </div>
 

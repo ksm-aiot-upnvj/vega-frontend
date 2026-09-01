@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import { ToastProvider } from "./Toast";
-import { mockCurrentUser } from "@/lib/mock-data";
-import type { UserRole } from "@/types/user";
+import type { UserRole, User } from "@/types/user";
 import type { ReactNode } from "react";
 
 interface DashboardLayoutProps {
@@ -19,7 +19,36 @@ export default function DashboardLayout({
   role,
 }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const userRole = role || mockCurrentUser.role;
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("vega_user");
+    if (!userStr) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr) as User;
+
+      // Route Guard
+      if (role && user.role !== role) {
+        if (user.role === "ADMIN") router.push("/admin");
+        else if (user.role === "MENTOR") router.push("/mentor");
+        else router.push("/dashboard");
+        return; // Do not set currentUser, keep screen blank while redirecting
+      }
+
+      setCurrentUser(user);
+    } catch (e) {
+      router.push("/login");
+    }
+  }, [role, router]);
+
+  if (!currentUser) return <div className="min-h-screen bg-surface-primary" />;
+
+  const userRole = currentUser.role;
 
   return (
     <ToastProvider>
@@ -40,7 +69,7 @@ export default function DashboardLayout({
         >
           {/* Navbar */}
           <Navbar
-            user={mockCurrentUser}
+            user={currentUser}
             onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
 

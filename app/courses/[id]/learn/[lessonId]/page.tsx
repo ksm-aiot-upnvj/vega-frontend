@@ -1,10 +1,11 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import DashboardLayout from "@/components/DashboardLayout";
 import Button from "@/components/Button";
-import { mockCourseDetail } from "@/lib/mock-data";
+import { getCourseById } from "@/lib/api";
+import type { CourseWithModules, LessonType } from "@/types/course";
 import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
@@ -16,7 +17,6 @@ import {
   File,
   Link as LinkIcon,
 } from "lucide-react";
-import type { LessonType } from "@/types/course";
 
 const lessonTypeIcons: Record<LessonType, typeof FileText> = {
   TEXT: FileText,
@@ -32,25 +32,49 @@ export default function LessonPage({
   params: Promise<{ id: string; lessonId: string }>;
 }) {
   const { id, lessonId } = use(params);
-  const course = mockCourseDetail;
-  const allLessons = course.modules.flatMap((m) => m.lessons);
+  
+  const [course, setCourse] = useState<CourseWithModules | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCourseById(id)
+      .then(setCourse)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const allLessons = course?.modules?.flatMap((m) => m.lessons) || [];
   const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
-  const currentLesson = allLessons[currentIndex];
+  const currentLesson = currentIndex >= 0 ? allLessons[currentIndex] : null;
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson =
-    currentIndex < allLessons.length - 1
+    currentIndex >= 0 && currentIndex < allLessons.length - 1
       ? allLessons[currentIndex + 1]
       : null;
-  const currentModule = course.modules.find(
+  const currentModule = course?.modules?.find(
     (m) => m.id === currentLesson?.module_id
   );
 
-  const [completed, setCompleted] = useState(
-    currentLesson?.is_completed || false
-  );
+  const [completed, setCompleted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  if (!currentLesson) {
+  useEffect(() => {
+    if (currentLesson) {
+      setCompleted(currentLesson.is_completed || false);
+    }
+  }, [currentLesson]);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <p className="text-text-muted">Loading...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!course || !currentLesson) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -79,14 +103,14 @@ export default function LessonPage({
                 </h3>
               </div>
               <nav className="py-2">
-                {course.modules.map((module) => (
+                {course.modules?.map((module) => (
                   <div key={module.id}>
                     <div className="px-4 py-2">
                       <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                         {module.title}
                       </p>
                     </div>
-                    {module.lessons.map((lesson) => {
+                    {module.lessons?.map((lesson) => {
                       const isActive = lesson.id === lessonId;
                       const LessonIcon =
                         lessonTypeIcons[lesson.lesson_type] || FileText;
@@ -210,7 +234,7 @@ export default function LessonPage({
               ) : (
                 <div className="text-center py-12 text-text-muted">
                   <BookOpen size={32} className="mx-auto mb-3 opacity-50" />
-                  <p>Konten lesson akan tersedia setelah backend terhubung.</p>
+                  <p>Konten lesson akan tersedia setelah mentor melengkapinya.</p>
                 </div>
               )}
             </div>

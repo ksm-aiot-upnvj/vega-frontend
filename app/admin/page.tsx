@@ -1,7 +1,11 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { mockCourses, mockAllUsers } from "@/lib/mock-data";
+import { getAllUsers, getCourses } from "@/lib/api";
+import type { User } from "@/types/user";
+import type { Course } from "@/types/course";
+import { useToast } from "@/components/Toast";
 import {
   Users,
   BookOpen,
@@ -11,11 +15,41 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const totalUsers = mockAllUsers.length;
-  const totalCourses = mockCourses.length;
-  const totalMentors = mockAllUsers.filter((u) => u.role === "MENTOR").length;
-  const totalMembers = mockAllUsers.filter((u) => u.role === "MEMBER").length;
-  const totalEnrolled = mockCourses.reduce((s, c) => s + c.enrolled_count, 0);
+  const [users, setUsers] = useState<User[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    Promise.all([
+      getAllUsers().catch(() => []),
+      getCourses().catch(() => [])
+    ])
+    .then(([usersData, coursesData]) => {
+      setUsers(usersData);
+      setCourses(coursesData);
+    })
+    .catch(() => {
+      toast("error", "Error", "Gagal memuat data dashboard");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  }, [toast]);
+
+  const totalUsers = users.length;
+  const totalCourses = courses.length;
+  const totalMentors = users.filter((u) => u.role === "MENTOR").length;
+  const totalMembers = users.filter((u) => u.role === "MEMBER").length;
+  const totalEnrolled = courses.reduce((s, c) => s + (c.enrolled_count || 0), 0);
+
+  if (loading) {
+    return (
+      <DashboardLayout role="ADMIN">
+        <div className="text-text-muted">Loading data...</div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout role="ADMIN">
@@ -57,8 +91,8 @@ export default function AdminDashboard() {
               Top Courses
             </h2>
             <div className="space-y-3">
-              {mockCourses
-                .sort((a, b) => b.enrolled_count - a.enrolled_count)
+              {courses
+                .sort((a, b) => (b.enrolled_count || 0) - (a.enrolled_count || 0))
                 .slice(0, 5)
                 .map((course, i) => (
                   <div
@@ -73,14 +107,17 @@ export default function AdminDashboard() {
                         {course.title}
                       </p>
                       <p className="text-xs text-text-muted">
-                        {course.mentor_name}
+                        {course.category?.name || "-"}
                       </p>
                     </div>
                     <span className="text-xs text-text-muted">
-                      {course.enrolled_count} siswa
+                      {course.enrolled_count || 0} siswa
                     </span>
                   </div>
                 ))}
+              {courses.length === 0 && (
+                <p className="text-sm text-text-muted">Belum ada course</p>
+              )}
             </div>
           </div>
 
@@ -90,17 +127,17 @@ export default function AdminDashboard() {
               User Terbaru
             </h2>
             <div className="space-y-3">
-              {mockAllUsers.slice(0, 5).map((user) => (
+              {users
+                .sort((a, b) => new Date(b.created_at || "").getTime() - new Date(a.created_at || "").getTime())
+                .slice(0, 5).map((user) => (
                 <div
                   key={user.id}
                   className="flex items-center gap-3 p-3 rounded-xl bg-primary-800/50"
                 >
                   <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-accent-600 to-secondary-500 text-white text-xs font-semibold flex-shrink-0">
                     {user.name
-                      .split(" ")
-                      .map((w) => w[0])
-                      .join("")
-                      .slice(0, 2)}
+                      ? user.name.split(" ").map((w) => w[0]).join("").slice(0, 2)
+                      : "-"}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-text-primary truncate">
@@ -121,6 +158,9 @@ export default function AdminDashboard() {
                   </span>
                 </div>
               ))}
+              {users.length === 0 && (
+                <p className="text-sm text-text-muted">Belum ada user</p>
+              )}
             </div>
           </div>
         </div>

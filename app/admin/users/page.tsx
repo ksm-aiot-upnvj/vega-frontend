@@ -1,22 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import DataTable from "@/components/DataTable";
-import { mockAllUsers } from "@/lib/mock-data";
 import { formatDateShort, getInitials, cn } from "@/lib/utils";
-import { Search, Shield, Edit } from "lucide-react";
-import type { User } from "@/types/user";
+import { Search, Shield, Edit, Trash2 } from "lucide-react";
+import type { User, UserRole } from "@/types/user";
+import { getAllUsers, updateUser, deleteUser } from "@/lib/api";
+import { useToast } from "@/components/Toast";
+import Modal from "@/components/Modal";
+import Input from "@/components/Input";
+import Button from "@/components/Button";
 
 export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const filteredUsers = mockAllUsers.filter((user) => {
+  // Edit State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "", role: "MEMBER" });
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllUsers();
+      setUsers(data);
+    } catch (err) {
+      toast("error", "Error", "Gagal memuat pengguna");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleEditClick = (user: User) => {
+    setEditingUser(user);
+    setEditForm({ name: user.name, email: user.email, role: user.role });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    try {
+      await updateUser(editingUser.id, editForm);
+      toast("success", "Berhasil", "User berhasil diupdate");
+      setIsEditModalOpen(false);
+      fetchUsers();
+    } catch (err) {
+      toast("error", "Error", "Gagal mengupdate user");
+    }
+  };
+
+  const handleDelete = async (user: User) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus user ${user.name}?`)) return;
+    try {
+      await deleteUser(user.id);
+      toast("success", "Berhasil", "User berhasil dihapus");
+      fetchUsers();
+    } catch (err) {
+      toast("error", "Error", "Gagal menghapus user");
+    }
+  };
+
+  const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.nim.includes(searchQuery);
+      (user.nim && user.nim.includes(searchQuery));
     const matchesRole =
       roleFilter === "all" || user.role === roleFilter;
     return matchesSearch && matchesRole;
@@ -45,7 +103,7 @@ export default function AdminUsersPage() {
       header: "NIM",
       render: (user: User) => (
         <span className="text-sm text-text-secondary font-mono">
-          {user.nim}
+          {user.nim || "-"}
         </span>
       ),
     },
@@ -71,7 +129,7 @@ export default function AdminUsersPage() {
       key: "interest",
       header: "Interest",
       render: (user: User) => (
-        <span className="text-sm text-text-muted">{user.interest}</span>
+        <span className="text-sm text-text-muted">{user.interest || "-"}</span>
       ),
     },
     {
@@ -79,20 +137,20 @@ export default function AdminUsersPage() {
       header: "Bergabung",
       render: (user: User) => (
         <span className="text-xs text-text-muted">
-          {formatDateShort(user.created_at)}
+          {user.created_at ? formatDateShort(user.created_at) : "-"}
         </span>
       ),
     },
     {
       key: "actions",
       header: "",
-      render: () => (
+      render: (user: User) => (
         <div className="flex items-center gap-1">
-          <button className="p-1.5 rounded-lg text-text-muted hover:text-accent-400 hover:bg-accent-500/10 transition-colors cursor-pointer">
+          <button onClick={() => handleEditClick(user)} className="p-1.5 rounded-lg text-text-muted hover:text-accent-400 hover:bg-accent-500/10 transition-colors cursor-pointer">
             <Edit size={14} />
           </button>
-          <button className="p-1.5 rounded-lg text-text-muted hover:text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer">
-            <Shield size={14} />
+          <button onClick={() => handleDelete(user)} className="p-1.5 rounded-lg text-text-muted hover:text-error-400 hover:bg-error-500/10 transition-colors cursor-pointer">
+            <Trash2 size={14} />
           </button>
         </div>
       ),
@@ -147,12 +205,53 @@ export default function AdminUsersPage() {
           {filteredUsers.length} user ditemukan
         </p>
 
-        <DataTable
-          columns={columns}
-          data={filteredUsers}
-          keyExtractor={(u) => u.id}
-          emptyMessage="User tidak ditemukan"
-        />
+        {loading ? (
+          <p className="text-text-muted">Loading...</p>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={filteredUsers}
+            keyExtractor={(u) => u.id}
+            emptyMessage="User tidak ditemukan"
+          />
+        )}
+
+        {/* Edit Modal */}
+        <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit User">
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <Input
+              label="Nama Lengkap"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={editForm.email}
+              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+            />
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-text-secondary">Role</label>
+              <select
+                className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                value={editForm.role}
+                onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+              >
+                <option value="MEMBER">Member</option>
+                <option value="MENTOR">Mentor</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="ghost" onClick={() => setIsEditModalOpen(false)}>
+                Batal
+              </Button>
+              <Button type="submit">
+                Simpan
+              </Button>
+            </div>
+          </form>
+        </Modal>
       </div>
     </DashboardLayout>
   );

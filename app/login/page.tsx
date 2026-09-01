@@ -34,7 +34,13 @@ export default function LoginPage() {
     try {
       const res = await apiLogin(form);
       saveAuthData(res.access_token, res.refresh_token, res.user);
-      router.push("/dashboard");
+      if (res.user.role === "ADMIN") {
+        router.push("/admin");
+      } else if (res.user.role === "MENTOR") {
+        router.push("/mentor");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setApiError(err instanceof Error ? err.message : "Login gagal");
     } finally {

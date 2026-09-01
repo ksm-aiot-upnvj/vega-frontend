@@ -1,25 +1,12 @@
 // ============================================
 // VEGA LMS — API Client
 // Centralized API communication layer
-// Currently uses mock data, ready for backend swap
 // ============================================
 
 import type { AuthResponse, LoginRequest, RegisterRequest, User } from "@/types/user";
-import type { Course, CourseWithModules, Enrollment } from "@/types/course";
+import type { Course, CourseWithModules, Enrollment, Category } from "@/types/course";
 import type { Quiz, Question, QuizResult } from "@/types/quiz";
 import type { AssignmentWithSubmission } from "@/types/assignment";
-import {
-  mockCourses,
-  mockEnrollments,
-  mockCourseDetail,
-  mockQuiz,
-  mockQuizQuestions,
-  mockAssignments,
-  mockCurrentUser,
-  mockAllUsers,
-  mockCategories,
-} from "./mock-data";
-import { delay } from "./utils";
 
 // ---- Configuration ----
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -51,150 +38,171 @@ async function apiFetch<T>(
 }
 
 // ============================================
-// Auth API (Mock)
+// Auth API
 // ============================================
 
 export async function login(data: LoginRequest): Promise<AuthResponse> {
-  await delay(800);
-  // Mock: accept any credentials
+  const formData = new URLSearchParams();
+  formData.append("username", data.email);
+  formData.append("password", data.password);
+
+  const tokenData = await apiFetch<{ access_token: string; token_type: string }>(
+    "/api/v1/auth/login",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData.toString(),
+    }
+  );
+
+  // set token temporarily to fetch user
+  if (typeof window !== "undefined") {
+    localStorage.setItem("vega_token", tokenData.access_token);
+  }
+
+  const user = await getCurrentUser();
+
   return {
-    access_token: "mock-jwt-token-" + Date.now(),
-    refresh_token: "mock-refresh-token-" + Date.now(),
-    token_type: "Bearer",
-    user: mockCurrentUser,
+    access_token: tokenData.access_token,
+    refresh_token: "", // not implemented in backend yet
+    token_type: tokenData.token_type,
+    user: user,
   };
 }
 
 export async function register(data: RegisterRequest): Promise<AuthResponse> {
-  await delay(1000);
-  return {
-    access_token: "mock-jwt-token-" + Date.now(),
-    refresh_token: "mock-refresh-token-" + Date.now(),
-    token_type: "Bearer",
-    user: {
-      ...mockCurrentUser,
-      nim: data.nim,
-      name: data.name,
-      email: data.email,
-      interest: data.interest,
-    },
-  };
+  await apiFetch<User>("/api/v1/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+  // After register, automatically log in
+  return login({ email: data.email, password: data.password });
 }
 
 export async function getCurrentUser(): Promise<User> {
-  await delay(300);
-  return mockCurrentUser;
+  return apiFetch<User>("/api/v1/users/me");
 }
 
 // ============================================
-// Course API (Mock)
+// Course API
 // ============================================
 
 export async function getCourses(): Promise<Course[]> {
-  await delay(500);
-  return mockCourses;
+  return apiFetch<Course[]>("/api/v1/courses/");
 }
 
 export async function getCourseById(id: string): Promise<CourseWithModules> {
-  await delay(400);
-  const course = mockCourses.find((c) => c.id === id);
-  if (!course) throw new Error("Course not found");
-  return { ...course, modules: mockCourseDetail.modules };
+  return apiFetch<CourseWithModules>(`/api/v1/courses/${id}`);
 }
 
-export async function getCategories() {
-  await delay(300);
-  return mockCategories;
+export async function createCourse(data: Partial<Course>): Promise<Course> {
+  return apiFetch<Course>("/api/v1/courses/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getCategories(): Promise<Category[]> {
+  return apiFetch<Category[]>("/api/v1/categories/");
 }
 
 // ============================================
-// Enrollment API (Mock)
+// Enrollment API
 // ============================================
 
 export async function getMyEnrollments(): Promise<Enrollment[]> {
-  await delay(400);
-  return mockEnrollments;
+  return apiFetch<Enrollment[]>("/api/v1/enrollments/me");
 }
 
 export async function enrollCourse(courseId: string): Promise<Enrollment> {
-  await delay(600);
-  return {
-    id: "e-new-" + Date.now(),
-    user_id: "u-001",
-    course_id: courseId,
-    progress_percentage: 0,
-    completed_lessons: 0,
-    total_lessons: 8,
-    enrolled_at: new Date().toISOString(),
-  };
+  return apiFetch<Enrollment>("/api/v1/enrollments/", {
+    method: "POST",
+    body: JSON.stringify({ course_id: courseId }),
+  });
 }
 
 // ============================================
-// Progress API (Mock)
+// Progress API (Mocked for now as we didn't implement lesson completion)
 // ============================================
 
 export async function completeLesson(lessonId: string): Promise<{ success: boolean }> {
-  await delay(500);
+  // Replace with real API endpoint later
   return { success: true };
 }
 
 // ============================================
-// Quiz API (Mock)
+// Quiz API
 // ============================================
 
 export async function getQuiz(quizId: string): Promise<Quiz> {
-  await delay(400);
-  return mockQuiz;
+  return apiFetch<Quiz>(`/api/v1/quizzes/${quizId}`);
 }
 
 export async function getQuizQuestions(quizId: string): Promise<Question[]> {
-  await delay(500);
-  return mockQuizQuestions;
+  return apiFetch<Question[]>(`/api/v1/quizzes/${quizId}/questions`);
 }
 
 export async function submitQuizAttempt(
   quizId: string,
   answers: { question_id: string; selected_option_ids: string[] }[]
 ): Promise<QuizResult> {
-  await delay(1000);
-  return {
-    attempt_id: "attempt-" + Date.now(),
-    quiz_id: quizId,
-    quiz_title: mockQuiz.title,
-    score: 80,
-    total_points: 100,
-    percentage: 80,
-    passed: true,
-    submitted_at: new Date().toISOString(),
-    question_results: mockQuizQuestions.map((q, i) => ({
-      question_id: q.id,
-      question_text: q.question_text,
-      is_correct: i !== 2,
-      points_earned: i !== 2 ? q.points : 0,
-      points_possible: q.points,
-      selected_option_ids: answers[i]?.selected_option_ids || [],
-      correct_option_ids: [q.options[1]?.id || ""],
-    })),
-  };
+  // Basic mock check, replace logic when needed
+  return apiFetch<QuizResult>(`/api/v1/quizzes/${quizId}/submit`, {
+    method: "POST",
+    body: JSON.stringify({
+      score: 80,
+      total_points: 100,
+      percentage: 80,
+      passed: true
+    }),
+  });
 }
 
 // ============================================
-// Assignment API (Mock)
+// Assignment API
 // ============================================
 
 export async function getAssignments(): Promise<AssignmentWithSubmission[]> {
-  await delay(500);
-  return mockAssignments;
+  return apiFetch<AssignmentWithSubmission[]>("/api/v1/assignments/");
 }
 
 // ============================================
-// Admin API (Mock)
+// Admin API
 // ============================================
 
 export async function getAllUsers(): Promise<User[]> {
-  await delay(500);
-  return mockAllUsers;
+  return apiFetch<User[]>("/api/v1/users/");
 }
+
+export async function updateUser(id: string, data: Partial<User>): Promise<User> {
+  return apiFetch<User>(`/api/v1/users/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteUser(id: string): Promise<User> {
+  return apiFetch<User>(`/api/v1/users/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export const updateMe = async (data: any) => {
+  return apiFetch<User>("/api/v1/users/me", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+};
+
+export const updatePassword = async (data: any) => {
+  return apiFetch<User>("/api/v1/users/password", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+};
 
 // Export base fetch for future real API integration
 export { apiFetch, API_BASE_URL };

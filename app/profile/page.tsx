@@ -1,33 +1,87 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import ProgressBar from "@/components/ProgressBar";
-import { mockCurrentUser, mockEnrollments } from "@/lib/mock-data";
 import { getInitials, formatDate } from "@/lib/utils";
 import {
-  User,
+  User as UserIcon,
   Mail,
   Hash,
   Sparkles,
   BookOpen,
-  CheckCircle,
-  BarChart3,
   Calendar,
-  Edit3,
-  Save,
+  Lock,
+  Key
 } from "lucide-react";
+import { getCurrentUser, updatePassword, getMyEnrollments } from "@/lib/api";
+import { useToast } from "@/components/Toast";
+import type { User } from "@/types/user";
+import type { Enrollment } from "@/types/course";
 
 export default function ProfilePage() {
-  const user = mockCurrentUser;
-  const enrollments = mockEnrollments;
-  const [isEditing, setIsEditing] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [form, setForm] = useState({
-    name: user.name,
-    interest: user.interest,
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: ""
   });
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      getCurrentUser(),
+      getMyEnrollments().catch(() => [])
+    ])
+    .then(([userData, enrollmentData]) => {
+      setUser(userData);
+      setEnrollments(enrollmentData);
+    })
+    .catch(() => {
+      toast("error", "Error", "Gagal memuat profil");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  }, [toast]);
+
+  const handleUpdatePassword = async () => {
+    if (!form.oldPassword || !form.newPassword || !form.confirmPassword) {
+      toast("error", "Error", "Semua field password wajib diisi");
+      return;
+    }
+
+    if (form.newPassword !== form.confirmPassword) {
+      toast("error", "Error", "Konfirmasi password tidak cocok");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updatePassword({ 
+        old_password: form.oldPassword, 
+        new_password: form.newPassword 
+      });
+      
+      toast("success", "Berhasil", "Password berhasil diperbarui!");
+      setIsEditingPassword(false);
+      setForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err: any) {
+      toast("error", "Error", err.message || "Gagal memperbarui password");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (loading) return <DashboardLayout><div className="text-text-muted">Loading...</div></DashboardLayout>;
+  if (!user) return <DashboardLayout><div className="text-text-muted">Gagal memuat pengguna</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -51,67 +105,70 @@ export default function ProfilePage() {
                 </h1>
                 <p className="text-sm text-text-muted">{user.email}</p>
               </div>
-              <div className="pb-1">
-                <Button
-                  variant={isEditing ? "primary" : "outline"}
-                  size="sm"
-                  icon={isEditing ? <Save size={14} /> : <Edit3 size={14} />}
-                  onClick={() => setIsEditing(!isEditing)}
-                >
-                  {isEditing ? "Simpan" : "Edit Profil"}
-                </Button>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Course", value: user.enrolled_courses_count, icon: BookOpen, color: "text-accent-400" },
-            { label: "Selesai", value: user.completed_courses_count, icon: CheckCircle, color: "text-emerald-400" },
-            { label: "Lesson", value: user.total_lessons_completed, icon: BarChart3, color: "text-amber-400" },
-            { label: "Quiz Avg", value: `${user.average_quiz_score}%`, icon: BarChart3, color: "text-rose-400" },
-          ].map((stat) => (
-            <div key={stat.label} className="glass-card p-4 text-center">
-              <stat.icon size={20} className={`mx-auto mb-2 ${stat.color}`} />
-              <p className="text-lg font-bold text-text-primary">{stat.value}</p>
-              <p className="text-xs text-text-muted">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
         {/* Profile Details */}
         <div className="glass-card p-6 space-y-5">
-          <h2 className="text-lg font-semibold text-text-primary">
-            Informasi Profil
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-text-primary">
+              Informasi Profil
+            </h2>
+            {!isEditingPassword && (
+              <Button variant="outline" size="sm" icon={<Key size={14} />} onClick={() => setIsEditingPassword(true)}>
+                Ganti Password
+              </Button>
+            )}
+          </div>
 
-          {isEditing ? (
-            <div className="space-y-4">
+          {isEditingPassword ? (
+            <div className="space-y-4 p-4 rounded-xl bg-primary-800/30 border border-border-secondary">
+              <h3 className="text-sm font-medium text-text-primary mb-2">Ubah Password</h3>
               <Input
-                label="Nama Lengkap"
-                icon={<User size={16} />}
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                label="Password Lama"
+                type="password"
+                placeholder="Masukkan password saat ini"
+                icon={<Lock size={16} />}
+                value={form.oldPassword}
+                onChange={(e) => setForm({ ...form, oldPassword: e.target.value })}
               />
               <Input
-                label="Interest / Minat"
-                icon={<Sparkles size={16} />}
-                value={form.interest}
-                onChange={(e) =>
-                  setForm({ ...form, interest: e.target.value })
-                }
+                label="Password Baru"
+                type="password"
+                placeholder="Masukkan password baru"
+                icon={<Key size={16} />}
+                value={form.newPassword}
+                onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
               />
+              <Input
+                label="Konfirmasi Password Baru"
+                type="password"
+                placeholder="Ulangi password baru"
+                icon={<Key size={16} />}
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+              />
+              <div className="flex gap-2 pt-2">
+                <Button variant="ghost" onClick={() => {
+                  setIsEditingPassword(false);
+                  setForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+                }}>
+                  Batal
+                </Button>
+                <Button onClick={handleUpdatePassword} loading={isSaving}>
+                  Simpan Password
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="grid gap-4">
               {[
-                { icon: Hash, label: "NIM", value: user.nim },
-                { icon: User, label: "Nama", value: user.name },
+                { icon: Hash, label: "NIM", value: user.nim || "-" },
+                { icon: UserIcon, label: "Nama", value: user.name },
                 { icon: Mail, label: "Email", value: user.email },
-                { icon: Sparkles, label: "Interest", value: user.interest },
-                { icon: Calendar, label: "Bergabung", value: formatDate(user.created_at) },
+                { icon: Sparkles, label: "Keahlian / Fokus", value: user.interest || "-" },
+                { icon: Calendar, label: "Bergabung", value: user.created_at ? formatDate(user.created_at) : "-" },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -137,33 +194,37 @@ export default function ProfilePage() {
           <h2 className="text-lg font-semibold text-text-primary">
             Course Terdaftar
           </h2>
-          <div className="space-y-3">
-            {enrollments.map((enrollment) => (
-              <div
-                key={enrollment.id}
-                className="flex items-center gap-4 p-3 rounded-xl bg-primary-800/50"
-              >
-                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent-500/10 text-accent-400 flex-shrink-0">
-                  <BookOpen size={18} />
+          {enrollments.length === 0 ? (
+            <p className="text-sm text-text-muted">Belum ada course yang diikuti.</p>
+          ) : (
+            <div className="space-y-3">
+              {enrollments.map((enrollment) => (
+                <div
+                  key={enrollment.id}
+                  className="flex items-center gap-4 p-3 rounded-xl bg-primary-800/50"
+                >
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent-500/10 text-accent-400 flex-shrink-0">
+                    <BookOpen size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">
+                      {enrollment.course?.title || "Course"}
+                    </p>
+                    <p className="text-xs text-text-muted">
+                      {enrollment.completed_lessons}/{enrollment.total_lessons}{" "}
+                      lesson
+                    </p>
+                  </div>
+                  <div className="w-24">
+                    <ProgressBar
+                      value={enrollment.progress_percentage}
+                      size="sm"
+                    />
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-text-primary truncate">
-                    {enrollment.course?.title || "Course"}
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    {enrollment.completed_lessons}/{enrollment.total_lessons}{" "}
-                    lesson
-                  </p>
-                </div>
-                <div className="w-24">
-                  <ProgressBar
-                    value={enrollment.progress_percentage}
-                    size="sm"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

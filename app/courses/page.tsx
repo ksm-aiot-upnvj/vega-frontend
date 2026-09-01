@@ -1,27 +1,51 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import CourseCard from "@/components/CourseCard";
 import EmptyState from "@/components/EmptyState";
-import { mockCourses, mockEnrollments, mockCategories } from "@/lib/mock-data";
 import { Search, Filter, BookOpen } from "lucide-react";
+import { getCourses, getCategories, getMyEnrollments } from "@/lib/api";
+import type { Course, Category, Enrollment } from "@/types/course";
+import { useToast } from "@/components/Toast";
 
 export default function CoursesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    Promise.all([
+      getCourses().catch(() => []),
+      getCategories().catch(() => []),
+      getMyEnrollments().catch(() => [])
+    ]).then(([coursesData, categoriesData, enrollmentsData]) => {
+      setCourses(coursesData);
+      setCategories(categoriesData);
+      setEnrollments(enrollmentsData);
+    }).catch(() => {
+      toast("error", "Error", "Gagal memuat data course");
+    }).finally(() => {
+      setLoading(false);
+    });
+  }, [toast]);
 
   // Build enrollment map for progress display
   const enrollmentMap = useMemo(() => {
     const map = new Map<string, number>();
-    mockEnrollments.forEach((e) => {
+    enrollments.forEach((e) => {
       map.set(e.course_id, e.progress_percentage);
     });
     return map;
-  }, []);
+  }, [enrollments]);
 
   const filteredCourses = useMemo(() => {
-    return mockCourses.filter((course) => {
+    return courses.filter((course) => {
       const matchesSearch =
         course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         course.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -29,7 +53,7 @@ export default function CoursesPage() {
         selectedCategory === "all" || course.category_id === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [courses, searchQuery, selectedCategory]);
 
   return (
     <DashboardLayout>
@@ -72,7 +96,7 @@ export default function CoursesPage() {
               >
                 Semua
               </button>
-              {mockCategories.map((cat) => (
+              {categories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
@@ -94,23 +118,27 @@ export default function CoursesPage() {
           Menampilkan {filteredCourses.length} course
         </p>
 
-        {/* Course Grid */}
-        {filteredCourses.length > 0 ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
-            {filteredCourses.map((course) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                progress={enrollmentMap.get(course.id)}
-              />
-            ))}
-          </div>
+        {loading ? (
+          <div className="text-text-muted">Loading courses...</div>
         ) : (
-          <EmptyState
-            icon={<BookOpen className="h-7 w-7 text-text-muted" />}
-            title="Course tidak ditemukan"
-            description="Coba ubah kata kunci atau filter kategori"
-          />
+          /* Course Grid */
+          filteredCourses.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
+              {filteredCourses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  progress={enrollmentMap.get(course.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={<BookOpen className="h-7 w-7 text-text-muted" />}
+              title="Course tidak ditemukan"
+              description="Coba ubah kata kunci atau filter kategori"
+            />
+          )
         )}
       </div>
     </DashboardLayout>

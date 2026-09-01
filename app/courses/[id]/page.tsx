@@ -1,14 +1,10 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProgressBar from "@/components/ProgressBar";
 import Button from "@/components/Button";
-import {
-  mockCourseDetail,
-  mockEnrollments,
-  mockQuiz,
-} from "@/lib/mock-data";
+import { getCourseById, getMyEnrollments, enrollCourse } from "@/lib/api";
 import {
   LEVEL_LABELS,
   LEVEL_COLORS,
@@ -31,8 +27,8 @@ import {
   Award,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import type { LessonType } from "@/types/course";
+import type { LessonType, CourseWithModules, Enrollment } from "@/types/course";
+import { useToast } from "@/components/Toast";
 
 const lessonTypeIcons: Record<LessonType, typeof FileText> = {
   TEXT: FileText,
@@ -48,12 +44,47 @@ export default function CourseDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const course = mockCourseDetail;
-  const enrollment = mockEnrollments.find((e) => e.course_id === id);
-  const isEnrolled = !!enrollment;
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(
-    new Set(course.modules.map((m) => m.id))
-  );
+  const [course, setCourse] = useState<CourseWithModules | null>(null);
+  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [enrolling, setEnrolling] = useState(false);
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
+
+  useEffect(() => {
+    Promise.all([
+      getCourseById(id),
+      getMyEnrollments().catch(() => [])
+    ])
+    .then(([courseData, enrollmentsData]) => {
+      setCourse(courseData);
+      setExpandedModules(new Set(courseData.modules?.map((m) => m.id) || []));
+      
+      const userEnrollment = enrollmentsData.find((e) => e.course_id === id);
+      if (userEnrollment) {
+        setEnrollment(userEnrollment);
+      }
+    })
+    .catch(() => {
+      toast("error", "Error", "Gagal memuat detail course");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  }, [id, toast]);
+
+  const handleEnroll = async () => {
+    setEnrolling(true);
+    try {
+      const newEnrollment = await enrollCourse(id);
+      setEnrollment(newEnrollment);
+      toast("success", "Berhasil", "Kamu berhasil mendaftar ke course ini!");
+    } catch (err) {
+      toast("error", "Error", "Gagal mendaftar ke course");
+    } finally {
+      setEnrolling(false);
+    }
+  };
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules((prev) => {
@@ -64,12 +95,18 @@ export default function CourseDetailPage({
     });
   };
 
-  const completedLessons = course.modules
-    .flatMap((m) => m.lessons)
-    .filter((l) => l.is_completed).length;
-  const totalLessons = course.modules.flatMap((m) => m.lessons).length;
-  const progressPercent =
-    totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+  if (loading) {
+    return <DashboardLayout><div className="text-text-muted">Loading...</div></DashboardLayout>;
+  }
+
+  if (!course) {
+    return <DashboardLayout><div className="text-text-muted">Course tidak ditemukan</div></DashboardLayout>;
+  }
+
+  const isEnrolled = !!enrollment;
+  const completedLessons = enrollment?.completed_lessons || 0;
+  const totalLessons = course.total_lessons || 0;
+  const progressPercent = enrollment?.progress_percentage || 0;
 
   return (
     <DashboardLayout>
@@ -91,7 +128,7 @@ export default function CourseDetailPage({
                   {LEVEL_LABELS[course.level]}
                 </span>
                 <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-accent-500/20 text-accent-300 backdrop-blur-sm">
-                  {course.category?.name}
+                  {course.category?.name || "Umum"}
                 </span>
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">
@@ -151,7 +188,7 @@ export default function CourseDetailPage({
               </div>
             ) : (
               <div className="pt-4 border-t border-border-secondary">
-                <Button size="lg" icon={<Play size={16} />}>
+                <Button size="lg" icon={<Play size={16} />} onClick={handleEnroll} loading={enrolling}>
                   Enroll Course
                 </Button>
               </div>
@@ -159,38 +196,20 @@ export default function CourseDetailPage({
           </div>
         </div>
 
-        {/* Quiz quick link */}
-        <Link
-          href={`/courses/${id}/quiz/${mockQuiz.id}`}
-          className="glass-card p-4 flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400">
-              <Award size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-text-primary group-hover:text-accent-300 transition-colors">
-                {mockQuiz.title}
-              </p>
-              <p className="text-xs text-text-muted">
-                {mockQuiz.total_questions} soal ·{" "}
-                {mockQuiz.time_limit && `${mockQuiz.time_limit} menit`}
-              </p>
-            </div>
-          </div>
-          <ChevronRight size={18} className="text-text-muted" />
-        </Link>
-
         {/* Modules Accordion */}
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-text-primary">
             Konten Course
           </h2>
-          {course.modules.map((module) => {
+          {(!course.modules || course.modules.length === 0) && (
+            <p className="text-sm text-text-muted">Belum ada konten pada course ini.</p>
+          )}
+          {course.modules?.map((module) => {
             const isExpanded = expandedModules.has(module.id);
-            const moduleCompleted = module.lessons.filter(
+            const moduleCompleted = module.lessons?.filter(
               (l) => l.is_completed
-            ).length;
+            ).length || 0;
+            const moduleLessonsCount = module.lessons?.length || 0;
 
             return (
               <div
@@ -211,7 +230,7 @@ export default function CourseDetailPage({
                         {module.title}
                       </p>
                       <p className="text-xs text-text-muted">
-                        {moduleCompleted}/{module.lessons.length} lesson selesai
+                        {moduleCompleted}/{moduleLessonsCount} lesson selesai
                       </p>
                     </div>
                   </div>
@@ -223,7 +242,7 @@ export default function CourseDetailPage({
                 </button>
 
                 {/* Lessons */}
-                {isExpanded && (
+                {isExpanded && module.lessons && (
                   <div className="border-t border-border-secondary">
                     {module.lessons.map((lesson) => {
                       const LessonIcon =
@@ -231,7 +250,13 @@ export default function CourseDetailPage({
                       return (
                         <Link
                           key={lesson.id}
-                          href={`/courses/${id}/learn/${lesson.id}`}
+                          href={isEnrolled ? `/courses/${id}/learn/${lesson.id}` : "#"}
+                          onClick={(e) => {
+                            if (!isEnrolled) {
+                              e.preventDefault();
+                              toast("error", "Error", "Kamu harus enroll course ini terlebih dahulu.");
+                            }
+                          }}
                           className="flex items-center gap-3 px-4 py-3 hover:bg-primary-700/20 transition-colors border-b border-border-secondary last:border-0"
                         >
                           <div

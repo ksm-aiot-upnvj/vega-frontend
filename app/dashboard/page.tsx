@@ -1,10 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import CourseCard from "@/components/CourseCard";
 import ProgressBar from "@/components/ProgressBar";
-import { getGreeting, formatPercentage } from "@/lib/utils";
-import { mockCurrentUser, mockEnrollments } from "@/lib/mock-data";
+import { getGreeting } from "@/lib/utils";
+import { getCurrentUser, getMyEnrollments } from "@/lib/api";
+import type { User } from "@/types/user";
+import type { Enrollment } from "@/types/course";
+import { useToast } from "@/components/Toast";
 import {
   BookOpen,
   CheckCircle,
@@ -16,8 +20,36 @@ import {
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const user = mockCurrentUser;
-  const enrollments = mockEnrollments;
+  const [user, setUser] = useState<User | null>(null);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    Promise.all([
+      getCurrentUser(),
+      getMyEnrollments().catch(() => [])
+    ])
+    .then(([userData, enrollmentsData]) => {
+      setUser(userData);
+      setEnrollments(enrollmentsData);
+    })
+    .catch(() => {
+      toast("error", "Error", "Gagal memuat data dashboard");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  }, [toast]);
+
+  if (loading || !user) {
+    return (
+      <DashboardLayout>
+        <div className="text-text-muted">Loading data...</div>
+      </DashboardLayout>
+    );
+  }
+
   const activeEnrollments = enrollments.filter(
     (e) => e.progress_percentage < 100
   );
@@ -42,28 +74,28 @@ export default function DashboardPage() {
           {[
             {
               label: "Course Terdaftar",
-              value: user.enrolled_courses_count,
+              value: enrollments.length,
               icon: BookOpen,
               color: "text-accent-400",
               bg: "bg-accent-500/10",
             },
             {
               label: "Course Selesai",
-              value: user.completed_courses_count,
+              value: enrollments.filter(e => e.progress_percentage === 100).length,
               icon: CheckCircle,
               color: "text-emerald-400",
               bg: "bg-emerald-500/10",
             },
             {
               label: "Lesson Selesai",
-              value: user.total_lessons_completed,
+              value: enrollments.reduce((sum, e) => sum + (e.completed_lessons || 0), 0),
               icon: TrendingUp,
               color: "text-amber-400",
               bg: "bg-amber-500/10",
             },
             {
               label: "Rata-rata Quiz",
-              value: `${user.average_quiz_score}%`,
+              value: user.average_quiz_score ? `${user.average_quiz_score}%` : "-",
               icon: BarChart3,
               color: "text-rose-400",
               bg: "bg-rose-500/10",
@@ -135,17 +167,21 @@ export default function DashboardPage() {
               Lihat Semua <ArrowRight size={14} />
             </Link>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
-            {enrollments.slice(0, 3).map((enrollment) =>
-              enrollment.course ? (
-                <CourseCard
-                  key={enrollment.id}
-                  course={enrollment.course}
-                  progress={enrollment.progress_percentage}
-                />
-              ) : null
-            )}
-          </div>
+          {enrollments.length === 0 ? (
+            <p className="text-sm text-text-muted">Kamu belum terdaftar di course apapun.</p>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
+              {enrollments.slice(0, 3).map((enrollment) =>
+                enrollment.course ? (
+                  <CourseCard
+                    key={enrollment.id}
+                    course={enrollment.course}
+                    progress={enrollment.progress_percentage}
+                  />
+                ) : null
+              )}
+            </div>
+          )}
         </div>
 
         {/* Recent Activity */}
@@ -154,45 +190,8 @@ export default function DashboardPage() {
             Aktivitas Terkini
           </h2>
           <div className="space-y-4">
-            {[
-              {
-                action: "Menyelesaikan lesson",
-                target: "GPIO & Digital I/O",
-                course: "IoT Fundamentals",
-                time: "2 jam lalu",
-              },
-              {
-                action: "Mengumpulkan assignment",
-                target: "Linear Regression",
-                course: "Machine Learning dengan Python",
-                time: "1 hari lalu",
-              },
-              {
-                action: "Menyelesaikan quiz",
-                target: "Quiz: Pengantar IoT",
-                course: "IoT Fundamentals",
-                time: "3 hari lalu",
-              },
-            ].map((activity, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 pb-4 border-b border-border-secondary last:border-0 last:pb-0"
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent-500/10 flex-shrink-0 mt-0.5">
-                  <CheckCircle size={14} className="text-accent-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-text-primary">
-                    {activity.action}:{" "}
-                    <span className="font-medium">{activity.target}</span>
-                  </p>
-                  <p className="text-xs text-text-muted">{activity.course}</p>
-                </div>
-                <span className="text-xs text-text-muted whitespace-nowrap">
-                  {activity.time}
-                </span>
-              </div>
-            ))}
+            <p className="text-sm text-text-muted italic">Belum ada aktivitas.</p>
+            {/* Mocked activities are removed per user request */}
           </div>
         </div>
       </div>
