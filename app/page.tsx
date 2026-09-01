@@ -48,11 +48,6 @@ export default function LandingPage() {
 
         <div className="relative max-w-6xl mx-auto px-6 lg:px-12 py-24 lg:py-36">
           <div className="text-center max-w-3xl mx-auto">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent-500/10 border border-accent-500/20 text-accent-300 text-sm font-medium mb-8 animate-fade-in">
-              <Zap size={14} />
-              KSM IoT & AI Learning Platform
-            </div>
 
             {/* Title */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 animate-fade-in-up">
@@ -107,117 +102,6 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-24 px-6 lg:px-12 border-t border-border-secondary">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
-              Semua yang kamu butuhkan untuk{" "}
-              <span className="text-gradient">berkembang</span>
-            </h2>
-            <p className="text-text-muted max-w-xl mx-auto">
-              Platform lengkap dengan materi terstruktur, quiz interaktif, dan mentorship langsung
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6 stagger">
-            {[
-              {
-                icon: BookOpen,
-                title: "Materi Terstruktur",
-                description:
-                  "Course dibagi dalam modul dan lesson yang jelas. Belajar step-by-step dari dasar hingga mahir.",
-              },
-              {
-                icon: Target,
-                title: "Quiz & Assessment",
-                description:
-                  "Uji pemahamanmu dengan quiz interaktif. Dapatkan feedback instan dan track progress-mu.",
-              },
-              {
-                icon: Shield,
-                title: "Mentorship",
-                description:
-                  "Belajar langsung dari mentor berpengalaman. Submit assignment dan dapatkan review personal.",
-              },
-            ].map((feature) => (
-              <div key={feature.title} className="glass-card p-7 group">
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-accent-500/10 border border-accent-500/20 text-accent-400 mb-5 group-hover:scale-110 transition-transform">
-                  <feature.icon size={24} />
-                </div>
-                <h3 className="text-lg font-semibold text-text-primary mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-text-muted leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Learning Path Preview */}
-      <section className="py-24 px-6 lg:px-12 border-t border-border-secondary bg-gradient-hero">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
-              Learning <span className="text-gradient">Journey</span>
-            </h2>
-            <p className="text-text-muted max-w-xl mx-auto">
-              Proses belajar yang terstruktur dan terukur
-            </p>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-0">
-            {[
-              { step: "01", title: "Daftar & Login", desc: "Buat akun VEGA" },
-              { step: "02", title: "Pilih Course", desc: "Browse & enroll" },
-              { step: "03", title: "Belajar", desc: "Ikuti materi" },
-              { step: "04", title: "Kerjakan Quiz", desc: "Uji pemahaman" },
-              { step: "05", title: "Selesai!", desc: "Complete course" },
-            ].map((item, i) => (
-              <div key={item.step} className="flex items-center">
-                <div className="glass-card p-5 text-center min-w-[140px]">
-                  <span className="block text-xs font-bold text-accent-400 mb-1">
-                    STEP {item.step}
-                  </span>
-                  <h3 className="text-sm font-semibold text-text-primary">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-text-muted mt-1">{item.desc}</p>
-                </div>
-                {i < 4 && (
-                  <ArrowRight
-                    size={20}
-                    className="text-text-muted mx-2 hidden md:block"
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 px-6 lg:px-12 border-t border-border-secondary">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl lg:text-4xl font-bold text-text-primary mb-4">
-            Siap untuk <span className="text-gradient">memulai?</span>
-          </h2>
-          <p className="text-text-muted mb-8 max-w-xl mx-auto">
-            Bergabung dengan anggota KSM lainnya dan mulai perjalanan belajarmu di VEGA.
-          </p>
-          <Link
-            href="http://localhost:3000"
-            className="inline-flex items-center gap-2 px-10 py-4 text-base font-semibold rounded-xl bg-gradient-to-r from-accent-600 to-accent-500 text-white hover:from-accent-500 hover:to-accent-400 transition-all shadow-lg hover:shadow-glow-lg group"
-          >
-            Daftar Sekarang
-            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
         </div>
       </section>
 

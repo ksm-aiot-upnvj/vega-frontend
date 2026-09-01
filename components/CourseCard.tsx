@@ -9,18 +9,20 @@ interface CourseCardProps {
   course: Course;
   progress?: number; // 0-100, undefined means not enrolled
   className?: string;
+  mentorEditMode?: boolean;
 }
 
 export default function CourseCard({
   course,
   progress,
   className,
+  mentorEditMode = false,
 }: CourseCardProps) {
   const isEnrolled = progress !== undefined;
 
   return (
     <Link
-      href={`/courses/${course.id}`}
+      href={mentorEditMode ? `/mentor/courses/${course.id}` : `/courses/${course.id}`}
       className={cn("glass-card group block p-0 overflow-hidden", className)}
     >
       {/* Thumbnail */}

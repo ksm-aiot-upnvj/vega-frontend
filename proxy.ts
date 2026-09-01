@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Check if token exists in cookies
   const token = request.cookies.get("vega_token")?.value;
   const isAuthPage = request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/register";

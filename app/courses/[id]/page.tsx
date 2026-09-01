@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProgressBar from "@/components/ProgressBar";
 import Button from "@/components/Button";
-import { getCourseById, getMyEnrollments, enrollCourse } from "@/lib/api";
+import { getCourseById, getMyEnrollments, enrollCourse, getCourseProgress } from "@/lib/api";
 import {
   LEVEL_LABELS,
   LEVEL_COLORS,
@@ -46,6 +46,7 @@ export default function CourseDetailPage({
   const { id } = use(params);
   const [course, setCourse] = useState<CourseWithModules | null>(null);
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
+  const [userProgress, setUserProgress] = useState<Record<string, { is_completed: boolean }>>({});
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
@@ -54,11 +55,13 @@ export default function CourseDetailPage({
   useEffect(() => {
     Promise.all([
       getCourseById(id),
-      getMyEnrollments().catch(() => [])
+      getMyEnrollments().catch(() => []),
+      getCourseProgress(id).catch(() => ({}))
     ])
-    .then(([courseData, enrollmentsData]) => {
+    .then(([courseData, enrollmentsData, progressData]) => {
       setCourse(courseData);
       setExpandedModules(new Set(courseData.modules?.map((m) => m.id) || []));
+      setUserProgress(progressData);
       
       const userEnrollment = enrollmentsData.find((e) => e.course_id === id);
       if (userEnrollment) {
@@ -207,7 +210,7 @@ export default function CourseDetailPage({
           {course.modules?.map((module) => {
             const isExpanded = expandedModules.has(module.id);
             const moduleCompleted = module.lessons?.filter(
-              (l) => l.is_completed
+              (l) => userProgress[l.id]?.is_completed || l.is_completed
             ).length || 0;
             const moduleLessonsCount = module.lessons?.length || 0;
 
@@ -247,6 +250,7 @@ export default function CourseDetailPage({
                     {module.lessons.map((lesson) => {
                       const LessonIcon =
                         lessonTypeIcons[lesson.lesson_type] || FileText;
+                      const isLessonCompleted = userProgress[lesson.id]?.is_completed || lesson.is_completed;
                       return (
                         <Link
                           key={lesson.id}
@@ -262,12 +266,12 @@ export default function CourseDetailPage({
                           <div
                             className={cn(
                               "flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0",
-                              lesson.is_completed
+                              isLessonCompleted
                                 ? "bg-emerald-500/10 text-emerald-400"
                                 : "bg-primary-700 text-text-muted"
                             )}
                           >
-                            {lesson.is_completed ? (
+                            {isLessonCompleted ? (
                               <CheckCircle size={14} />
                             ) : (
                               <LessonIcon size={14} />
@@ -277,7 +281,7 @@ export default function CourseDetailPage({
                             <p
                               className={cn(
                                 "text-sm",
-                                lesson.is_completed
+                                isLessonCompleted
                                   ? "text-text-muted line-through"
                                   : "text-text-primary"
                               )}

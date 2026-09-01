@@ -5,9 +5,9 @@ import DashboardLayout from "@/components/DashboardLayout";
 import CourseCard from "@/components/CourseCard";
 import ProgressBar from "@/components/ProgressBar";
 import { getGreeting } from "@/lib/utils";
-import { getCurrentUser, getMyEnrollments } from "@/lib/api";
+import { getCurrentUser, getMyEnrollments, getCourses } from "@/lib/api";
 import type { User } from "@/types/user";
-import type { Enrollment } from "@/types/course";
+import type { Enrollment, Course } from "@/types/course";
 import { useToast } from "@/components/Toast";
 import {
   BookOpen,
@@ -22,17 +22,22 @@ import Link from "next/link";
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [mentorCourses, setMentorCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     Promise.all([
       getCurrentUser(),
-      getMyEnrollments().catch(() => [])
+      getMyEnrollments().catch(() => []),
+      getCourses().catch(() => [])
     ])
-    .then(([userData, enrollmentsData]) => {
+    .then(([userData, enrollmentsData, coursesData]) => {
       setUser(userData);
       setEnrollments(enrollmentsData);
+      if (userData.role === 'MENTOR') {
+        setMentorCourses(coursesData.filter(c => c.mentor_name === userData.name));
+      }
     })
     .catch(() => {
       toast("error", "Error", "Gagal memuat data dashboard");
@@ -158,29 +163,45 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-text-primary">
-              Course Saya
+              {user.role === 'MENTOR' ? 'Course Buatanku' : 'Course Saya'}
             </h2>
             <Link
-              href="/courses"
+              href={user.role === 'MENTOR' ? "/mentor/courses" : "/courses"}
               className="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
             >
               Lihat Semua <ArrowRight size={14} />
             </Link>
           </div>
-          {enrollments.length === 0 ? (
-            <p className="text-sm text-text-muted">Kamu belum terdaftar di course apapun.</p>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
-              {enrollments.slice(0, 3).map((enrollment) =>
-                enrollment.course ? (
+          {user.role === 'MENTOR' ? (
+            mentorCourses.length === 0 ? (
+              <p className="text-sm text-text-muted">Kamu belum membuat course apapun.</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
+                {mentorCourses.slice(0, 3).map((course) => (
                   <CourseCard
-                    key={enrollment.id}
-                    course={enrollment.course}
-                    progress={enrollment.progress_percentage}
+                    key={course.id}
+                    course={course}
+                    mentorEditMode={true}
                   />
-                ) : null
-              )}
-            </div>
+                ))}
+              </div>
+            )
+          ) : (
+            enrollments.length === 0 ? (
+              <p className="text-sm text-text-muted">Kamu belum terdaftar di course apapun.</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
+                {enrollments.slice(0, 3).map((enrollment) =>
+                  enrollment.course ? (
+                    <CourseCard
+                      key={enrollment.id}
+                      course={enrollment.course}
+                      progress={enrollment.progress_percentage}
+                    />
+                  ) : null
+                )}
+              </div>
+            )
           )}
         </div>
 

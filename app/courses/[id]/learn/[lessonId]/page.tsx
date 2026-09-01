@@ -120,6 +120,14 @@ export default function LessonPage({
           : undefined;
       await completeLesson(currentLesson.id, taskCode, answersStr);
       setCompleted(true);
+      setUserProgress(prev => ({
+        ...prev,
+        [currentLesson.id]: {
+          ...prev[currentLesson.id],
+          is_completed: true,
+          answers: answersStr || null,
+        }
+      }));
     } catch (err: any) {
       setErrorMsg(err.message || "Gagal menyimpan progress");
     } finally {

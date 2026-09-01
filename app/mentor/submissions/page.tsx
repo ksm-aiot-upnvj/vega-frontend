@@ -36,6 +36,7 @@ interface Submission {
   completed_at: string | null;
   answers: string | null;
   score: number | null;
+  lesson_content?: string | null;
 }
 
 const LESSON_TYPE_LABEL: Record<string, string> = {
@@ -328,33 +329,60 @@ export default function MentorSubmissionsPage() {
                           <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
                             Jawaban Member
                           </p>
-                          {parsed ? (
-                            <div className="space-y-3">
-                              {Object.entries(parsed).map(
-                                ([idx, ans]: [string, any]) => (
-                                  <div
-                                    key={idx}
-                                    className="p-3 bg-primary-800 rounded-xl border border-border-secondary"
-                                  >
-                                    <p className="text-xs text-text-muted mb-1">
-                                      Pertanyaan {Number(idx) + 1}
-                                    </p>
-                                    <p className="text-sm text-text-primary">
-                                      {ans || (
-                                        <span className="italic text-text-muted">
-                                          Tidak dijawab
-                                        </span>
-                                      )}
-                                    </p>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-text-muted italic">
-                              Tidak ada jawaban tersimpan.
-                            </p>
-                          )}
+                          {(() => {
+                            let questions: any[] = [];
+                            try { questions = JSON.parse(sub.lesson_content || "[]"); } catch {}
+                            
+                            if (parsed) {
+                              return (
+                                <div className="space-y-3">
+                                  {Object.entries(parsed).map(
+                                    ([idxStr, ans]: [string, any]) => {
+                                      const idx = Number(idxStr);
+                                      const questionObj = questions[idx];
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className="p-3 bg-primary-800 rounded-xl border border-border-secondary"
+                                        >
+                                          <p className="text-xs text-text-muted mb-1 font-semibold">
+                                            Pertanyaan {idx + 1}
+                                          </p>
+                                          <p className="text-sm text-text-primary mb-2">
+                                            {questionObj?.question || `Pertanyaan ${idx + 1} tidak ditemukan`}
+                                          </p>
+                                          
+                                          {questionObj?.type === 'mcq' && (
+                                              <div className="mb-2 text-xs text-text-muted pl-2 border-l-2 border-border-secondary">
+                                                  Pilihan:
+                                                  {questionObj.options?.map((opt: string, optIdx: number) => 
+                                                    opt ? <div key={optIdx}>{String.fromCharCode(65 + optIdx)}. {opt}</div> : null
+                                                  )}
+                                              </div>
+                                          )}
+                                          
+                                          <div className="bg-surface-secondary px-3 py-2 rounded text-sm text-accent-400">
+                                            <span className="font-semibold text-text-muted mr-2">Jawaban:</span> 
+                                            {ans || (
+                                              <span className="italic text-text-muted">
+                                                Tidak dijawab
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                  )}
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <p className="text-sm text-text-muted italic">
+                                  Tidak ada jawaban tersimpan.
+                                </p>
+                              );
+                            }
+                          })()}
                         </div>
                       )}
 
