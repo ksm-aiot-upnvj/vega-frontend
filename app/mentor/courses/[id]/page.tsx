@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
@@ -11,7 +11,8 @@ import { useToast } from "@/components/Toast";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function CourseBuilderPage({ params }: { params: { id: string } }) {
+export default function CourseBuilderPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = React.use(params);
   const [course, setCourse] = useState<CourseWithModules | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -25,11 +26,11 @@ export default function CourseBuilderPage({ params }: { params: { id: string } }
   ]);
 
   useEffect(() => {
-    getCourseById(params.id)
+    getCourseById(resolvedParams.id)
       .then(setCourse)
       .catch(() => toast("error", "Error", "Gagal memuat course"))
       .finally(() => setLoading(false));
-  }, [params.id, toast]);
+  }, [resolvedParams.id, toast]);
 
   const addModule = () => {
     setModules([...modules, { id: Date.now().toString(), title: "Modul Baru", lessons: [] }]);

@@ -10,7 +10,7 @@ import { useToast } from "@/components/Toast";
 import { LEVEL_LABELS, LEVEL_COLORS, formatDateShort, cn } from "@/lib/utils";
 import { Plus, Edit, Trash2, Users } from "lucide-react";
 import type { Course } from "@/types/course";
-import { getCourses, createCourse, getCategories } from "@/lib/api";
+import { getCourses, createCourse, getCategories, deleteCourse } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 export default function MentorCoursesPage() {
@@ -71,6 +71,17 @@ export default function MentorCoursesPage() {
       router.push(`/mentor/courses/${newCourse.id}`);
     } catch (err) {
       toast("error", "Error", "Gagal membuat course");
+    }
+  };
+
+  const handleDeleteCourse = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus course ini?")) return;
+    try {
+      await deleteCourse(id);
+      toast("success", "Berhasil", "Course berhasil dihapus");
+      setCourses(courses.filter(c => c.id !== id));
+    } catch (err) {
+      toast("error", "Error", "Gagal menghapus course");
     }
   };
 
@@ -150,7 +161,7 @@ export default function MentorCoursesPage() {
           >
             <Edit size={14} />
           </button>
-          <button className="p-1.5 rounded-lg text-text-muted hover:text-error-400 hover:bg-error-500/10 transition-colors cursor-pointer">
+          <button onClick={() => handleDeleteCourse(course.id)} className="p-1.5 rounded-lg text-text-muted hover:text-error-400 hover:bg-error-500/10 transition-colors cursor-pointer">
             <Trash2 size={14} />
           </button>
         </div>

@@ -2,7 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   isOpen: boolean;
@@ -27,6 +28,12 @@ export default function Modal({
   size = "md",
   className,
 }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Close on Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -42,10 +49,10 @@ export default function Modal({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
@@ -76,6 +83,7 @@ export default function Modal({
         {/* Body */}
         <div className="p-6">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

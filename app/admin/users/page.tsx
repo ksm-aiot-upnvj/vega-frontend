@@ -22,7 +22,7 @@ export default function AdminUsersPage() {
   // Edit State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", email: "", role: "MEMBER" });
+  const [editForm, setEditForm] = useState({ name: "", email: "", role: "MEMBER", interest: "", password: "" });
 
   const fetchUsers = async () => {
     try {
@@ -42,7 +42,7 @@ export default function AdminUsersPage() {
 
   const handleEditClick = (user: User) => {
     setEditingUser(user);
-    setEditForm({ name: user.name, email: user.email, role: user.role });
+    setEditForm({ name: user.name, email: user.email, role: user.role, interest: user.interest || "", password: "" });
     setIsEditModalOpen(true);
   };
 
@@ -50,7 +50,13 @@ export default function AdminUsersPage() {
     e.preventDefault();
     if (!editingUser) return;
     try {
-      await updateUser(editingUser.id, editForm);
+      // Only send password if it's filled
+      const updateData = { ...editForm };
+      if (!updateData.password) {
+        delete (updateData as any).password;
+      }
+      
+      await updateUser(editingUser.id, updateData);
       toast("success", "Berhasil", "User berhasil diupdate");
       setIsEditModalOpen(false);
       fetchUsers();
@@ -229,6 +235,26 @@ export default function AdminUsersPage() {
               type="email"
               value={editForm.email}
               onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+            />
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-text-secondary">Interest</label>
+              <select
+                className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                value={editForm.interest}
+                onChange={(e) => setEditForm({ ...editForm, interest: e.target.value })}
+              >
+                <option value="">Tidak ada</option>
+                <option value="Internet of Things (IoT)">Internet of Things (IoT)</option>
+                <option value="Artificial Intelligence / Machine Learning">Artificial Intelligence / Machine Learning</option>
+                <option value="Web & Cloud Systems">Web & Cloud Systems</option>
+              </select>
+            </div>
+            <Input
+              label="Password Baru (Opsional)"
+              type="password"
+              placeholder="Kosongkan jika tidak ingin mengubah password"
+              value={editForm.password}
+              onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
             />
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-text-secondary">Role</label>

@@ -105,6 +105,12 @@ export async function createCourse(data: Partial<Course>): Promise<Course> {
   });
 }
 
+export async function deleteCourse(id: string): Promise<Course> {
+  return apiFetch<Course>(`/api/v1/courses/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function getCategories(): Promise<Category[]> {
   return apiFetch<Category[]>("/api/v1/categories/");
 }
