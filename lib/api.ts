@@ -211,6 +211,40 @@ export async function getDeadlines(): Promise<{id: string, date: string, title: 
 }
 
 // ============================================
+// Announcements API
+// ============================================
+
+export interface Announcement {
+  id: string;
+  title: string;
+  description: string;
+  event_date: string | null;
+  target_audience: string;
+  mentor_id: string;
+  created_at: string;
+  author_name: string;
+  is_notified: boolean;
+}
+
+export async function getAnnouncements(): Promise<Announcement[]> {
+  return apiFetch<Announcement[]>("/api/v1/announcements/");
+}
+
+export async function createAnnouncement(payload: { title: string, description: string, event_date?: string, target_audience: string }): Promise<Announcement> {
+  return apiFetch<Announcement>("/api/v1/announcements/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function toggleAnnouncementNotify(id: string, is_notified: boolean): Promise<{status: string, is_notified: boolean}> {
+  return apiFetch<{status: string, is_notified: boolean}>(`/api/v1/announcements/${id}/notify`, {
+    method: "POST",
+    body: JSON.stringify({ is_notified }),
+  });
+}
+
+// ============================================
 // Admin API
 // ============================================
 

@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
-import CourseCard from "@/components/CourseCard";
 import ProgressBar from "@/components/ProgressBar";
 import DeadlineCalendar, { DeadlineEvent } from "@/components/DeadlineCalendar";
+import AnnouncementList from "@/components/AnnouncementList";
 import { getGreeting } from "@/lib/utils";
-import { getCurrentUser, getMyEnrollments, getCourses, getDeadlines } from "@/lib/api";
+import { getCurrentUser, getMyEnrollments, getCourses, getDeadlines, getAnnouncements, Announcement } from "@/lib/api";
 import type { User } from "@/types/user";
 import type { Enrollment, Course } from "@/types/course";
+import { BellRing } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import {
   BookOpen,
@@ -19,12 +20,15 @@ import {
   Clock,
 } from "lucide-react";
 import Link from "next/link";
+import CourseCard from "@/components/CourseCard";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [mentorCourses, setMentorCourses] = useState<Course[]>([]);
   const [deadlineEvents, setDeadlineEvents] = useState<DeadlineEvent[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -34,14 +38,17 @@ export default function DashboardPage() {
       getMyEnrollments().catch(() => []),
       getCourses().catch(() => []),
       getDeadlines().catch(() => []),
+      getAnnouncements().catch(() => []),
     ])
-    .then(([userData, enrollmentsData, coursesData, deadlinesData]) => {
+    .then(([userData, enrollmentsData, coursesData, deadlinesData, announcementsData]) => {
       setUser(userData);
       setEnrollments(enrollmentsData);
+      setCourses(coursesData);
       if (userData.role === 'MENTOR') {
         setMentorCourses(coursesData.filter(c => c.mentor_name === userData.name));
       }
       setDeadlineEvents(deadlinesData);
+      setAnnouncements(announcementsData);
     })
     .catch(() => {
       toast("error", "Error", "Gagal memuat data dashboard");
@@ -58,6 +65,22 @@ export default function DashboardPage() {
       </DashboardLayout>
     );
   }
+
+  const handleNotifyToggle = (id: string, isNotified: boolean) => {
+    setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, is_notified: isNotified } : a));
+  };
+
+  // Find active notifications (H-3 to D-day)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const activeNotifications = announcements.filter(a => {
+    if (!a.is_notified || !a.event_date) return false;
+    const eventDate = new Date(a.event_date);
+    eventDate.setHours(0, 0, 0, 0);
+    const diffTime = eventDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 3;
+  });
 
   const activeEnrollments = enrollments.filter(
     (e) => e.progress_percentage < 100
@@ -129,96 +152,116 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Continue Learning */}
-        {lastCourse && lastCourse.course && (
-          <div className="glass-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Clock size={18} className="text-accent-400" />
-                <h2 className="text-lg font-semibold text-text-primary">
-                  Lanjutkan Belajar
-                </h2>
-              </div>
-              <Link
-                href={`/courses/${lastCourse.course_id}`}
-                className="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
-              >
-                Buka Course <ArrowRight size={14} />
-              </Link>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="flex-1">
-                <h3 className="text-base font-medium text-text-primary">
-                  {lastCourse.course.title}
-                </h3>
-                <p className="text-sm text-text-muted mt-1">
-                  {lastCourse.completed_lessons} dari {lastCourse.total_lessons}{" "}
-                  lesson selesai
-                </p>
-              </div>
-              <div className="w-full sm:w-48">
-                <ProgressBar value={lastCourse.progress_percentage} />
-              </div>
-            </div>
+        {/* Announcements replacing Lanjutkan Belajar */}
+        <section className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-text-primary">Pengumuman</h2>
+            <Link href="/dashboard/announcements">
+              <span className="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors">
+                Lihat Semua <ArrowRight size={14} />
+              </span>
+            </Link>
+          </div>
+          <AnnouncementList 
+            announcements={announcements.slice(0, 3)} 
+            onNotifyToggle={handleNotifyToggle} 
+          />
+        </section>
+
+        {/* Notifications */}
+        {activeNotifications.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {activeNotifications.map(notification => {
+              const eventDate = new Date(notification.event_date!);
+              eventDate.setHours(0, 0, 0, 0);
+              const diffTime = eventDate.getTime() - today.getTime();
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              const dayLabel = diffDays === 0 ? "Hari ini" : `H-${diffDays}`;
+              
+              return (
+                <div key={`notif-${notification.id}`} className="glass-card bg-amber-500/10 border-amber-500/30 p-4 flex items-start gap-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="p-2 rounded-full bg-amber-500/20 text-amber-400">
+                    <BellRing size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-amber-400">Pengingat: {notification.title} ({dayLabel})</h3>
+                    <p className="text-xs text-text-secondary mt-1">Acara akan berlangsung pada {new Date(notification.event_date!).toLocaleString("id-ID")}. Jangan sampai ketinggalan!</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
         {/* Course Saya + Kalender Deadline — side by side */}
-        <div className="flex flex-col lg:flex-row gap-5">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Left: Course list (50%) */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-text-primary">
-                {user.role === 'MENTOR' ? 'Course Buatanku' : 'Course Saya'}
-              </h2>
-              <Link
-                href={user.role === 'MENTOR' ? "/mentor/courses" : "/courses"}
-                className="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
-              >
-                Lihat Semua <ArrowRight size={14} />
-              </Link>
-            </div>
+            <section className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-text-primary">
+                  {user.role === 'MENTOR' ? 'Course Buatanku' : 'Course Saya'}
+                </h2>
+                <Link
+                  href={user.role === 'MENTOR' ? "/mentor/courses" : "/courses"}
+                  className="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
+                >
+                  Lihat Semua <ArrowRight size={14} />
+                </Link>
+              </div>
 
-            {/* Horizontal scrollable course strip */}
-            {user.role === 'MENTOR' ? (
-              mentorCourses.length === 0 ? (
-                <p className="text-sm text-text-muted">Kamu belum membuat course apapun.</p>
-              ) : (
-                <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
-                  {mentorCourses.map((course) => (
-                    <div key={course.id} className="snap-start flex-shrink-0 w-64">
-                      <CourseCard course={course} mentorEditMode={true} />
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (
-              enrollments.length === 0 ? (
-                <p className="text-sm text-text-muted">Kamu belum terdaftar di course apapun.</p>
-              ) : (
-                <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
-                  {enrollments.map((enrollment) =>
-                    enrollment.course ? (
-                      <div key={enrollment.id} className="snap-start flex-shrink-0 w-64">
-                        <CourseCard
-                          course={enrollment.course}
-                          progress={enrollment.progress_percentage}
-                        />
+              {/* Horizontal scrollable course strip */}
+              {user.role === 'MENTOR' ? (
+                mentorCourses.length === 0 ? (
+                  <p className="text-sm text-text-muted">Kamu belum membuat course apapun.</p>
+                ) : (
+                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+                    {mentorCourses.map((course) => (
+                      <div key={course.id} className="snap-start flex-shrink-0 w-64">
+                        <CourseCard course={course} mentorEditMode={true} />
                       </div>
-                    ) : null
-                  )}
-                </div>
-              )
-            )}
+                    ))}
+                  </div>
+                )
+              ) : (
+                enrollments.length === 0 ? (
+                  <p className="text-sm text-text-muted">Kamu belum terdaftar di course apapun.</p>
+                ) : (
+                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+                    {enrollments.map((enrollment) =>
+                      enrollment.course ? (
+                        <div key={enrollment.id} className="snap-start flex-shrink-0 w-64">
+                          <CourseCard
+                            course={enrollment.course}
+                            progress={enrollment.progress_percentage}
+                          />
+                        </div>
+                      ) : null
+                    )}
+                  </div>
+                )
+              )}
+            </section>
           </div>
 
-          {/* Right: Deadline Calendar (50%) */}
+          {/* Right Column (Calendar) */}
           <div className="lg:w-72 xl:w-80 flex-shrink-0">
-            <DeadlineCalendar events={deadlineEvents} />
+            <DeadlineCalendar 
+              events={[
+                ...deadlineEvents,
+                ...announcements
+                  .filter(a => a.is_notified && a.event_date)
+                  .map(a => ({
+                    id: `ann-${a.id}`,
+                    date: a.event_date!,
+                    title: a.title,
+                    course_title: "Pengumuman",
+                    type: "announcement" as const
+                  }))
+              ]} 
+            />
           </div>
         </div>
-
-        {/* Recent Activity */}
         <div className="glass-card p-6">
           <h2 className="text-lg font-semibold text-text-primary mb-4">
             Aktivitas Terkini

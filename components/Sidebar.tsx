@@ -10,12 +10,10 @@ import {
   User,
   GraduationCap,
   Users,
-  BarChart3,
-  FolderOpen,
+  Megaphone,
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Settings,
 } from "lucide-react";
 import type { UserRole } from "@/types/user";
 
@@ -35,6 +33,7 @@ const memberNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Courses", href: "/courses", icon: BookOpen },
   { label: "Assignments", href: "/assignments", icon: ClipboardList },
+  { label: "Announcements", href: "/dashboard/announcements", icon: Megaphone },
   { label: "Profile", href: "/profile", icon: User },
 ];
 
@@ -42,6 +41,7 @@ const mentorNav: NavItem[] = [
   { label: "Dashboard", href: "/mentor", icon: LayoutDashboard },
   { label: "My Courses", href: "/mentor/courses", icon: GraduationCap },
   { label: "Submissions", href: "/mentor/submissions", icon: ClipboardList },
+  { label: "Announcements", href: "/mentor/announcements", icon: Megaphone },
   { label: "Profile", href: "/profile", icon: User },
 ];
 

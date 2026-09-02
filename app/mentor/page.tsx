@@ -5,7 +5,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import CourseCard from "@/components/CourseCard";
 import Button from "@/components/Button";
 import DeadlineCalendar, { DeadlineEvent } from "@/components/DeadlineCalendar";
-import { getCourses, getCurrentUser, getDeadlines } from "@/lib/api";
+import AnnouncementList from "@/components/AnnouncementList";
+import { getCourses, getCurrentUser, getDeadlines, getAnnouncements, Announcement } from "@/lib/api";
 import type { Course } from "@/types/course";
 import type { User } from "@/types/user";
 import { useToast } from "@/components/Toast";
@@ -16,25 +17,24 @@ export default function MentorDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [deadlineEvents, setDeadlineEvents] = useState<DeadlineEvent[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     Promise.all([
       getCurrentUser(),
-      getCourses().catch(() => [])
+      getCourses().catch(() => []),
+      getDeadlines().catch(() => []),
+      getAnnouncements().catch(() => []),
     ])
-    .then(([user, allCourses]) => {
+    .then(([user, allCourses, deadlinesData, announcementsData]) => {
       setCurrentUser(user);
       // Filter courses where the mentor is the current user
       const myCourses = allCourses.filter(c => c.mentor_id === user.id);
       setCourses(myCourses);
-      // Fetch all deadlines (modules with deadlines) for the mentor's courses
-      getDeadlines()
-        .then((results) => {
-          setDeadlineEvents(results);
-        })
-        .catch(() => {});
+      setDeadlineEvents(deadlinesData);
+      setAnnouncements(announcementsData);
     })
     .catch(() => {
       toast("error", "Error", "Gagal memuat data dashboard");
@@ -132,6 +132,21 @@ export default function MentorDashboard() {
                 ))}
               </div>
             )}
+            
+            {/* Announcements Section */}
+            <section className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-text-primary">Pengumuman Terakhir</h2>
+                <Link href="/mentor/announcements">
+                  <Button variant="outline" size="sm">Kelola Pengumuman</Button>
+                </Link>
+              </div>
+              <AnnouncementList 
+                announcements={announcements.slice(0, 3)} 
+                onNotifyToggle={() => {}} 
+                showNotifyToggle={false}
+              />
+            </section>
           </div>
 
           {/* Right: Deadline Calendar */}

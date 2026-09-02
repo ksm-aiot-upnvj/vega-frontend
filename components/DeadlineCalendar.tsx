@@ -9,6 +9,7 @@ export interface DeadlineEvent {
   title: string;
   course_title: string;
   id: string;
+  type?: 'deadline' | 'announcement';
 }
 
 interface DeadlineCalendarProps {
@@ -147,7 +148,11 @@ export default function DeadlineCalendar({
         {cells.map((day, idx) => {
           if (!day) return <div key={idx} />;
           const key = dateKey(day);
-          const hasEvent = !!eventMap[key];
+          const dayEvents = eventMap[key] || [];
+          const hasEvent = dayEvents.length > 0;
+          const hasAnnouncement = dayEvents.some(e => e.type === 'announcement');
+          const hasDeadline = dayEvents.some(e => !e.type || e.type === 'deadline');
+          
           const isToday = key === todayStr;
           const isSelected = isPickerMode ? key === pickedStr : key === selectedDate;
           const isPast = key < todayStr;
@@ -171,12 +176,24 @@ export default function DeadlineCalendar({
             >
               <span>{day}</span>
               {hasEvent && (
-                <span
-                  className={cn(
-                    "block w-1 h-1 rounded-full mt-0.5",
-                    isPast ? "bg-text-muted/40" : "bg-rose-400"
+                <div className="flex gap-0.5 mt-0.5">
+                  {hasDeadline && (
+                    <span
+                      className={cn(
+                        "block w-1 h-1 rounded-full",
+                        isPast ? "bg-text-muted/40" : "bg-rose-400"
+                      )}
+                    />
                   )}
-                />
+                  {hasAnnouncement && (
+                    <span
+                      className={cn(
+                        "block w-1 h-1 rounded-full",
+                        isPast ? "bg-text-muted/40" : "bg-amber-400"
+                      )}
+                    />
+                  )}
+                </div>
               )}
               {isPickerMode && isSelected && !hasEvent && (
                 <span className="block w-1 h-1 rounded-full mt-0.5 bg-amber-400" />
@@ -193,8 +210,8 @@ export default function DeadlineCalendar({
             {selectedEvents.length > 0 ? `Deadline – ${selectedDate}` : "Tidak ada deadline"}
           </p>
           {selectedEvents.map((ev) => (
-            <div key={ev.id} className="flex items-start gap-2 p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1 flex-shrink-0" />
+            <div key={ev.id} className={cn("flex items-start gap-2 p-2 rounded-lg border", ev.type === 'announcement' ? "bg-amber-500/10 border-amber-500/20" : "bg-rose-500/10 border-rose-500/20")}>
+              <span className={cn("w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0", ev.type === 'announcement' ? "bg-amber-400" : "bg-rose-400")} />
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold text-text-primary truncate">{ev.title}</p>
                 <p className="text-[10px] text-text-muted truncate">{ev.course_title}</p>
@@ -215,8 +232,8 @@ export default function DeadlineCalendar({
                   const d = new Date(ev.date);
                   const label = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
                   return (
-                    <div key={ev.id} className="flex items-start gap-2 p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
-                      <span className="flex-shrink-0 text-[9px] font-bold text-rose-400 bg-rose-500/15 px-1.5 py-0.5 rounded">
+                    <div key={ev.id} className={cn("flex items-start gap-2 p-2 rounded-lg border", ev.type === 'announcement' ? "bg-amber-500/10 border-amber-500/20" : "bg-rose-500/10 border-rose-500/20")}>
+                      <span className={cn("flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded", ev.type === 'announcement' ? "text-amber-400 bg-amber-500/15" : "text-rose-400 bg-rose-500/15")}>
                         {label}
                       </span>
                       <div className="min-w-0">
