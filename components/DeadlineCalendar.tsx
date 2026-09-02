@@ -16,17 +16,26 @@ interface DeadlineCalendarProps {
   events: DeadlineEvent[];
   /** compact mode removes header title and reduces outer padding */
   compact?: boolean;
-  /** called when a date is picked (for date-picker mode in course builder) */
-  onPickDate?: (isoDate: string) => void;
+  /** If true, the calendar acts as a date & time picker and highlights pickedDate */
+  pickerMode?: boolean;
   /** currently selected date (for date-picker mode) */
   pickedDate?: string;
+  /** called when a date is picked (for date-picker mode in course builder) */
+  onPickDate?: (isoDate: string) => void;
 }
 
 const WEEKDAYS = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
 const MONTHS = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+  "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+  "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
 ];
+
+// Helper to generate a naive local ISO string (YYYY-MM-DDTHH:mm:ss)
+// This prevents timezone shifting when sending to and receiving from the backend.
+const toLocalISOString = (d: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+};
 
 export function toLocalDateStr(dateStr: string): string {
   if (!dateStr) return "";
@@ -41,6 +50,7 @@ export function toLocalDateStr(dateStr: string): string {
 export default function DeadlineCalendar({
   events,
   compact = false,
+  pickerMode = false,
   onPickDate,
   pickedDate,
 }: DeadlineCalendarProps) {
@@ -49,7 +59,7 @@ export default function DeadlineCalendar({
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  const isPickerMode = !!onPickDate;
+  const isPickerMode = pickerMode;
 
   // Map "YYYY-MM-DD" -> events[]
   const eventMap = useMemo(() => {
@@ -91,16 +101,30 @@ export default function DeadlineCalendar({
     return `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   }
 
-  function handleDayClick(day: number) {
-    const key = dateKey(day);
-    if (isPickerMode) {
-      // In date-picker mode, call onPickDate with ISO datetime (noon local)
-      const iso = `${key}T12:00:00`;
-      onPickDate!(iso);
+  const handleDayClick = (day: number) => {
+    if (isPickerMode && onPickDate) {
+      const selected = new Date(currentYear, currentMonth, day);
+      if (pickedDate) {
+        // preserve time if pickedDate is already set
+        const prev = new Date(pickedDate);
+        selected.setHours(prev.getHours(), prev.getMinutes(), prev.getSeconds());
+      }
+      onPickDate(toLocalISOString(selected));
     } else {
+      const key = dateKey(day);
       setSelectedDate(selectedDate === key ? null : key);
     }
-  }
+  };
+
+  const handleTimeChange = (hours: number, minutes: number) => {
+    if (!isPickerMode || !onPickDate || !pickedDate) return;
+    const date = new Date(pickedDate);
+    date.setHours(hours, minutes, 0, 0);
+    onPickDate(toLocalISOString(date));
+  };
+
+  const pickedHours = pickedDate ? new Date(pickedDate).getHours() : 0;
+  const pickedMinutes = pickedDate ? new Date(pickedDate).getMinutes() : 0;
 
   const selectedEvents = selectedDate ? (eventMap[selectedDate] ?? []) : [];
   const upcomingKeys = Object.keys(eventMap).filter((k) => k >= todayStr).sort();
@@ -218,6 +242,38 @@ export default function DeadlineCalendar({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Time Picker (picker mode only) */}
+      {isPickerMode && pickedDate && (
+        <div className="mt-4 pt-4 border-t border-border-secondary">
+          <label className="block text-[11px] font-semibold text-text-secondary mb-2">Pilih Jam (24 Jam)</label>
+          <div className="flex items-center gap-2">
+            <select
+              value={pickedHours.toString().padStart(2, '0')}
+              onChange={(e) => handleTimeChange(parseInt(e.target.value, 10), pickedMinutes)}
+              className="flex-1 bg-surface-secondary border border-border-primary rounded-lg px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 transition-colors"
+            >
+              {Array.from({ length: 24 }).map((_, i) => (
+                <option key={`h-${i}`} value={i.toString().padStart(2, '0')}>
+                  {i.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+            <span className="text-text-primary font-bold">:</span>
+            <select
+              value={pickedMinutes.toString().padStart(2, '0')}
+              onChange={(e) => handleTimeChange(pickedHours, parseInt(e.target.value, 10))}
+              className="flex-1 bg-surface-secondary border border-border-primary rounded-lg px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 transition-colors"
+            >
+              {Array.from({ length: 60 }).map((_, i) => (
+                <option key={`m-${i}`} value={i.toString().padStart(2, '0')}>
+                  {i.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
 

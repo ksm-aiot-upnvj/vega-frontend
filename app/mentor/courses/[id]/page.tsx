@@ -175,9 +175,9 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-secondary hover:border-amber-500 hover:text-amber-400 transition-colors"
                     >
                       <CalendarDays size={13} className="text-amber-400" />
-                      <span>
+                      <span className="text-xs font-semibold text-text-primary">
                         {mod.deadline
-                          ? new Date(mod.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+                          ? new Date(mod.deadline).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
                           : "Set Deadline"}
                       </span>
                       {mod.deadline && (
@@ -193,6 +193,7 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                       <div className="absolute right-0 top-9 z-50 bg-surface-secondary border border-border-secondary rounded-xl shadow-xl p-3 w-64">
                         <DeadlineCalendar
                           events={[]}
+                          pickerMode={true}
                           compact
                           pickedDate={mod.deadline || undefined}
                           onPickDate={(iso) => {

@@ -220,6 +220,8 @@ export interface Announcement {
   description: string;
   event_date: string | null;
   target_audience: string;
+  status: string;
+  scheduled_at: string | null;
   mentor_id: string;
   created_at: string;
   author_name: string;
@@ -230,10 +232,23 @@ export async function getAnnouncements(): Promise<Announcement[]> {
   return apiFetch<Announcement[]>("/api/v1/announcements/");
 }
 
-export async function createAnnouncement(payload: { title: string, description: string, event_date?: string, target_audience: string }): Promise<Announcement> {
+export async function createAnnouncement(payload: { title: string, description: string, event_date?: string, target_audience: string, status?: string, scheduled_at?: string }): Promise<Announcement> {
   return apiFetch<Announcement>("/api/v1/announcements/", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export async function updateAnnouncement(id: string, payload: Partial<{ title: string, description: string, event_date: string, target_audience: string, status: string, scheduled_at: string }>): Promise<Announcement> {
+  return apiFetch<Announcement>(`/api/v1/announcements/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAnnouncement(id: string): Promise<{status: string}> {
+  return apiFetch<{status: string}>(`/api/v1/announcements/${id}`, {
+    method: "DELETE",
   });
 }
 

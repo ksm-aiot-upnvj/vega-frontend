@@ -10,6 +10,7 @@ interface AnnouncementListProps {
   announcements: Announcement[];
   onNotifyToggle: (id: string, isNotified: boolean) => void;
   showNotifyToggle?: boolean;
+  clamped?: boolean;
 }
 
 // Simple regex to detect URLs
@@ -40,7 +41,7 @@ function Linkify({ text }: { text: string }) {
   );
 }
 
-export default function AnnouncementList({ announcements, onNotifyToggle, showNotifyToggle = true }: AnnouncementListProps) {
+export default function AnnouncementList({ announcements, onNotifyToggle, showNotifyToggle = true, clamped = true }: AnnouncementListProps) {
   const { toast } = useToast();
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
@@ -112,7 +113,7 @@ export default function AnnouncementList({ announcements, onNotifyToggle, showNo
             )}
           </div>
           
-          <div className="mt-3 text-sm text-text-secondary whitespace-pre-wrap leading-relaxed">
+          <div className={cn("mt-3 text-sm text-text-secondary whitespace-pre-wrap leading-relaxed", clamped && "line-clamp-3")}>
             <Linkify text={a.description} />
           </div>
         </div>

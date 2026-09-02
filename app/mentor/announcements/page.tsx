@@ -5,7 +5,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useToast } from "@/components/Toast";
 import Button from "@/components/Button";
 import DeadlineCalendar from "@/components/DeadlineCalendar";
-import { getAnnouncements, createAnnouncement, Announcement } from "@/lib/api";
+import { getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement, Announcement } from "@/lib/api";
+import { Pencil, Trash2 } from "lucide-react";
 
 export default function MentorAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -13,10 +14,14 @@ export default function MentorAnnouncementsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Form states
+  const [editId, setEditId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [targetAudience, setTargetAudience] = useState("ENROLLED_MEMBERS");
+  const [status, setStatus] = useState("PUBLISHED");
+  const [scheduledAt, setScheduledAt] = useState("");
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -32,6 +37,43 @@ export default function MentorAnnouncementsPage() {
     fetchAnnouncements();
   }, [toast]);
 
+  const openCreateModal = () => {
+    setEditId(null);
+    setTitle("");
+    setDescription("");
+    setEventDate("");
+    setTargetAudience("ENROLLED_MEMBERS");
+    setStatus("PUBLISHED");
+    setScheduledAt("");
+    setIsModalOpen(true);
+  };
+
+  const toLocalISOString = (d: Date) => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+  };
+
+  const openEditModal = (a: Announcement) => {
+    setEditId(a.id);
+    setTitle(a.title);
+    setDescription(a.description);
+    setEventDate(a.event_date ? toLocalISOString(new Date(a.event_date)) : "");
+    setTargetAudience(a.target_audience);
+    setStatus(a.status);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus pengumuman ini?")) return;
+    try {
+      await deleteAnnouncement(id);
+      toast("success", "Sukses", "Pengumuman berhasil dihapus");
+      fetchAnnouncements();
+    } catch (err) {
+      toast("error", "Error", "Gagal menghapus pengumuman");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description) {
@@ -39,23 +81,31 @@ export default function MentorAnnouncementsPage() {
       return;
     }
 
+    if (status === "SCHEDULED" && !scheduledAt) {
+      toast("error", "Error", "Tanggal jadwal harus diisi");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await createAnnouncement({
+      const payload = {
         title,
         description,
-        event_date: eventDate ? new Date(eventDate).toISOString() : undefined,
-        target_audience: targetAudience
-      });
-      toast("success", "Sukses", "Pengumuman berhasil dibuat");
+        event_date: eventDate || undefined,
+        target_audience: targetAudience,
+        status: status,
+      };
+
+      if (editId) {
+        await updateAnnouncement(editId, payload);
+        toast("success", "Sukses", "Pengumuman berhasil diperbarui");
+      } else {
+        await createAnnouncement(payload);
+        toast("success", "Sukses", "Pengumuman berhasil dibuat");
+      }
       setIsModalOpen(false);
-      setTitle("");
-      setDescription("");
-      setEventDate("");
-      setTargetAudience("ENROLLED_MEMBERS");
       fetchAnnouncements();
     } catch (err) {
-      toast("error", "Error", "Gagal membuat pengumuman");
+      toast("error", "Error", "Gagal menyimpan pengumuman");
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +119,7 @@ export default function MentorAnnouncementsPage() {
             <h1 className="text-2xl font-bold text-text-primary">Pengumuman</h1>
             <p className="text-text-secondary mt-1">Buat dan kelola pengumuman untuk member atau mentor lainnya.</p>
           </div>
-          <Button onClick={() => setIsModalOpen(true)}>Buat Pengumuman</Button>
+          <Button onClick={openCreateModal}>Buat Pengumuman</Button>
         </div>
 
         {loading ? (
@@ -92,6 +142,14 @@ export default function MentorAnnouncementsPage() {
               <div key={announcement.id} className="glass-card p-6">
                 <div className="flex justify-between items-start">
                   <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        announcement.status === 'DRAFT' ? 'bg-text-muted/20 text-text-secondary' :
+                        'bg-emerald-500/20 text-emerald-400'
+                      }`}>
+                        {announcement.status}
+                      </span>
+                    </div>
                     <h3 className="text-lg font-semibold text-text-primary">{announcement.title}</h3>
                     <p className="text-xs text-text-muted mt-1">
                       Target: {announcement.target_audience === "ENROLLED_MEMBERS" ? "Member Course" : announcement.target_audience === "MENTORS" ? "Mentor" : "Semua"} • 
@@ -99,12 +157,27 @@ export default function MentorAnnouncementsPage() {
                     </p>
                     {announcement.event_date && (
                       <p className="text-xs font-semibold text-accent-400 mt-1">
-                        Tanggal Event: {new Date(announcement.event_date).toLocaleDateString("id-ID")}
+                        Tanggal Event: {new Date(announcement.event_date).toLocaleString("id-ID")}
                       </p>
                     )}
                   </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => openEditModal(announcement)}
+                      className="p-2 text-text-secondary hover:text-accent-400 hover:bg-accent-500/10 rounded-lg transition-colors"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(announcement.id)}
+                      className="p-2 text-text-secondary hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
-                <div className="mt-4 text-text-secondary whitespace-pre-wrap text-sm">
+                <div className="mt-4 text-text-secondary whitespace-pre-wrap text-sm line-clamp-2">
                   {announcement.description}
                 </div>
               </div>
@@ -115,8 +188,10 @@ export default function MentorAnnouncementsPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-text-primary mb-4">Buat Pengumuman Baru</h2>
+          <div className="glass-card p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold text-text-primary mb-4">
+              {editId ? "Edit Pengumuman" : "Buat Pengumuman Baru"}
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-1">Judul</label>
@@ -130,17 +205,30 @@ export default function MentorAnnouncementsPage() {
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Target Audience</label>
-                <select
-                  value={targetAudience}
-                  onChange={(e) => setTargetAudience(e.target.value)}
-                  className="w-full bg-surface-secondary border border-border-primary rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-accent-500 transition-colors"
-                >
-                  <option value="ENROLLED_MEMBERS">Member di Course Saya</option>
-                  <option value="MENTORS">Mentor Saja</option>
-                  <option value="BOTH">Keduanya</option>
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Target Audience</label>
+                  <select
+                    value={targetAudience}
+                    onChange={(e) => setTargetAudience(e.target.value)}
+                    className="w-full bg-surface-secondary border border-border-primary rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-accent-500 transition-colors"
+                  >
+                    <option value="ENROLLED_MEMBERS">Member di Course Saya</option>
+                    <option value="MENTORS">Mentor Saja</option>
+                    <option value="BOTH">Keduanya</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Status Publikasi</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full bg-surface-secondary border border-border-primary rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-accent-500 transition-colors"
+                  >
+                    <option value="PUBLISHED">Langsung Publish</option>
+                    <option value="DRAFT">Simpan Draft</option>
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -149,7 +237,7 @@ export default function MentorAnnouncementsPage() {
                   <div className="mb-3 flex items-center justify-between">
                     <span className="text-sm text-text-primary font-medium">
                       {eventDate
-                        ? new Date(eventDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+                        ? new Date(eventDate).toLocaleString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
                         : "Pilih tanggal"}
                     </span>
                     {eventDate && (
@@ -185,7 +273,7 @@ export default function MentorAnnouncementsPage() {
               <div className="flex justify-end gap-3 pt-4 border-t border-border-secondary">
                 <Button variant="outline" onClick={() => setIsModalOpen(false)} type="button">Batal</Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Menyimpan..." : "Sebarkan"}
+                  {isSubmitting ? "Menyimpan..." : "Simpan"}
                 </Button>
               </div>
             </form>

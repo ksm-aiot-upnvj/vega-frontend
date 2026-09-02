@@ -43,7 +43,8 @@ export default function MemberAnnouncementsPage() {
         ) : (
           <AnnouncementList 
             announcements={announcements} 
-            onNotifyToggle={handleNotifyToggle} 
+            onNotifyToggle={handleNotifyToggle}
+            clamped={false} 
           />
         )}
       </div>
