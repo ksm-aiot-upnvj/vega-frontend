@@ -28,13 +28,13 @@ export default function CourseCard({
       {/* Thumbnail */}
       <div className="relative h-40 bg-gradient-purple overflow-hidden">
         <div className="absolute inset-0 dot-pattern opacity-30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-primary-900/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
         {/* Level badge */}
         <div className="absolute top-3 left-3">
           <span
             className={cn(
-              "inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-primary-900/70 backdrop-blur-sm border border-border-primary",
+              "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-white/90 text-primary-900 border border-white/20 shadow-sm",
               LEVEL_COLORS[course.level]
             )}
           >
@@ -44,22 +44,22 @@ export default function CourseCard({
 
         {/* Category */}
         <div className="absolute top-3 right-3">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-accent-500/20 text-accent-300 backdrop-blur-sm">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-white/90 text-accent-700 shadow-sm">
             {course.category?.name || "Umum"}
           </span>
         </div>
 
         {/* Course icon */}
         <div className="absolute bottom-4 left-4">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent-600/20 border border-accent-500/30 group-hover:scale-110 transition-transform duration-300">
-            <BookOpen className="h-5 w-5 text-accent-400" />
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/20 border border-white/30 group-hover:scale-110 transition-transform duration-300">
+            <BookOpen className="h-5 w-5 text-white" />
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="p-5 space-y-3">
-        <h3 className="text-base font-semibold text-text-primary group-hover:text-accent-300 transition-colors line-clamp-1">
+        <h3 className="text-base font-semibold text-text-primary group-hover:text-accent-600 transition-colors line-clamp-1">
           {course.title}
         </h3>
         <p className="text-sm text-text-muted line-clamp-2">

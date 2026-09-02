@@ -32,7 +32,7 @@ export default function DataTable<T>({
     >
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border-secondary bg-primary-800/50">
+          <tr className="border-b border-border-secondary bg-primary-50">
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -60,7 +60,7 @@ export default function DataTable<T>({
             data.map((item) => (
               <tr
                 key={keyExtractor(item)}
-                className="hover:bg-primary-800/30 transition-colors"
+                className="hover:bg-primary-50/50 transition-colors"
               >
                 {columns.map((col) => (
                   <td

@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -106,9 +107,7 @@ export default function AdminGroupsPage() {
   if (loading) {
     return (
       <DashboardLayout role="ADMIN">
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin w-8 h-8 border-4 border-accent-500 border-t-transparent rounded-full" />
-        </div>
+        <PageLoader />
       </DashboardLayout>
     );
   }
@@ -144,7 +143,7 @@ export default function AdminGroupsPage() {
                     className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
                       selectedMentor === mentor.id
                         ? "bg-accent-500/10 border-accent-500 text-accent-400"
-                        : "bg-primary-900 border-border-secondary text-text-secondary hover:border-accent-500/50"
+                        : "bg-white border-border-primary shadow-sm text-text-secondary hover:border-accent-500/50"
                     }`}
                   >
                     <p className="font-medium">{mentor.name}</p>
@@ -177,13 +176,13 @@ export default function AdminGroupsPage() {
                   return (
                     <div
                       key={member.id}
-                      onClick={() => !isAssignedToOther && toggleMember(member.id)}
+                      onClick={() => toggleMember(member.id)}
                       className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
-                        isAssignedToOther
-                          ? "bg-primary-900 border-border-primary opacity-50 cursor-not-allowed"
+                        isAssignedToOther && !isSelected
+                          ? "bg-surface-secondary border-border-secondary cursor-pointer hover:border-accent-500/50 opacity-60 grayscale"
                           : isSelected
                             ? "bg-accent-500/10 border-accent-500 cursor-pointer"
-                            : "bg-primary-900 border-border-secondary cursor-pointer hover:border-accent-500/50"
+                            : "bg-white border-border-primary shadow-sm cursor-pointer hover:border-accent-500/50"
                       }`}
                     >
                       <div className="min-w-0">

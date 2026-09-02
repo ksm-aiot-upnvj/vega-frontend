@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -61,9 +62,7 @@ export default function MemberGroupPage() {
   if (loading) {
     return (
       <DashboardLayout role="MEMBER">
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin w-8 h-8 border-4 border-accent-500 border-t-transparent rounded-full" />
-        </div>
+        <PageLoader />
       </DashboardLayout>
     );
   }
@@ -96,8 +95,8 @@ export default function MemberGroupPage() {
                     <Crown size={18} className="text-accent-400" />
                     Mentor Anda
                   </h2>
-                  <div className="flex items-center gap-4 p-4 bg-primary-900 border border-accent-500/30 rounded-xl">
-                    <div className="w-12 h-12 rounded-full bg-accent-500/20 flex items-center justify-center flex-shrink-0 text-accent-400 font-bold text-lg border border-accent-500/50">
+                  <div className="flex items-center gap-4 p-4 bg-white border border-border-primary shadow-sm rounded-xl">
+                    <div className="w-12 h-12 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0 text-accent-500 font-bold text-lg border border-border-secondary">
                       {mentor.name.charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -114,8 +113,8 @@ export default function MemberGroupPage() {
                   </h2>
                   <div className="space-y-3">
                     {peers.map(peer => (
-                      <div key={peer.id} className="flex items-center gap-3 p-3 bg-primary-900 border border-border-secondary rounded-xl">
-                        <div className="w-9 h-9 rounded-full bg-surface-tertiary flex items-center justify-center flex-shrink-0 text-text-muted font-bold text-sm">
+                      <div key={peer.id} className="flex items-center gap-3 p-3 bg-white border border-border-primary shadow-sm rounded-xl">
+                        <div className="w-9 h-9 rounded-full bg-primary-50 border border-border-secondary flex items-center justify-center flex-shrink-0 text-accent-500 font-bold text-sm">
                           {peer.name.charAt(0)}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -140,7 +139,7 @@ export default function MemberGroupPage() {
                     {projects.map(project => (
                       <div key={project.id} className="bg-surface-secondary border border-border-secondary rounded-2xl overflow-hidden flex flex-col hover:border-border-primary transition-colors">
                         {project.image_url && (
-                          <div className="h-48 sm:h-64 w-full bg-primary-800">
+                          <div className="h-48 sm:h-64 w-full bg-surface-secondary">
                             <img src={project.image_url} alt={project.title} className="w-full h-full object-cover" />
                           </div>
                         )}
@@ -155,12 +154,12 @@ export default function MemberGroupPage() {
                           
                           <div className="mt-auto pt-4 flex flex-wrap gap-3 border-t border-border-secondary">
                             {project.whatsapp_link && (
-                              <a href={project.whatsapp_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium bg-emerald-500/10 text-emerald-400 px-4 py-2 rounded-xl hover:bg-emerald-500/20 transition-colors">
+                              <a href={project.whatsapp_link.startsWith('http') ? project.whatsapp_link : `https://${project.whatsapp_link}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium bg-emerald-500/10 text-emerald-400 px-4 py-2 rounded-xl hover:bg-emerald-500/20 transition-colors">
                                 <LinkIcon size={16} /> Grup WhatsApp
                               </a>
                             )}
                             {project.github_link && (
-                              <a href={project.github_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium bg-indigo-500/10 text-indigo-400 px-4 py-2 rounded-xl hover:bg-indigo-500/20 transition-colors">
+                              <a href={project.github_link.startsWith('http') ? project.github_link : `https://${project.github_link}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium bg-indigo-500/10 text-indigo-400 px-4 py-2 rounded-xl hover:bg-indigo-500/20 transition-colors">
                                 <Code size={16} /> Repository Github
                               </a>
                             )}

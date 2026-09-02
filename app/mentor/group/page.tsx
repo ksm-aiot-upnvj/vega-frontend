@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -127,9 +128,7 @@ export default function MentorGroupPage() {
   if (loading) {
     return (
       <DashboardLayout role="MENTOR">
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin w-8 h-8 border-4 border-accent-500 border-t-transparent rounded-full" />
-        </div>
+        <PageLoader />
       </DashboardLayout>
     );
   }
@@ -163,8 +162,8 @@ export default function MentorGroupPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {members.map(member => (
-                <div key={member.id} className="flex items-center gap-3 p-4 bg-primary-900 border border-border-secondary rounded-xl">
-                  <div className="w-10 h-10 rounded-full bg-accent-500/20 flex items-center justify-center flex-shrink-0 text-accent-400 font-bold">
+                <div key={member.id} className="flex items-center gap-3 p-4 bg-white border border-border-primary shadow-sm rounded-xl">
+                  <div className="w-10 h-10 rounded-full bg-primary-50 border border-border-secondary flex items-center justify-center flex-shrink-0 text-accent-500 font-bold">
                     {member.name.charAt(0)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -195,7 +194,7 @@ export default function MentorGroupPage() {
               {projects.map(project => (
                 <div key={project.id} className="bg-surface-secondary border border-border-secondary rounded-2xl overflow-hidden flex flex-col hover:border-accent-500/30 transition-colors">
                   {project.image_url && (
-                    <div className="h-40 w-full bg-primary-800">
+                    <div className="h-40 w-full bg-surface-secondary">
                       <img src={project.image_url} alt={project.title} className="w-full h-full object-cover" />
                     </div>
                   )}
@@ -217,12 +216,12 @@ export default function MentorGroupPage() {
                     
                     <div className="mt-auto pt-4 flex flex-wrap gap-2 border-t border-border-secondary">
                       {project.whatsapp_link && (
-                        <a href={project.whatsapp_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-full hover:bg-emerald-500/20 transition-colors">
+                        <a href={project.whatsapp_link.startsWith('http') ? project.whatsapp_link : `https://${project.whatsapp_link}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-full hover:bg-emerald-500/20 transition-colors">
                           <LinkIcon size={12} /> WhatsApp
                         </a>
                       )}
                       {project.github_link && (
-                        <a href={project.github_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium bg-indigo-500/10 text-indigo-400 px-3 py-1.5 rounded-full hover:bg-indigo-500/20 transition-colors">
+                        <a href={project.github_link.startsWith('http') ? project.github_link : `https://${project.github_link}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium bg-indigo-500/10 text-indigo-400 px-3 py-1.5 rounded-full hover:bg-indigo-500/20 transition-colors">
                           <Code size={12} /> GitHub
                         </a>
                       )}

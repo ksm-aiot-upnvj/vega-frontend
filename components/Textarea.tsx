@@ -40,7 +40,7 @@ export default function Textarea({
         <textarea
           id={inputId}
           className={cn(
-            "w-full rounded-xl bg-primary-800 border border-border-primary px-4 py-2.5 text-sm text-text-primary resize-y",
+            "w-full rounded-xl bg-white border border-border-primary px-4 py-2.5 text-sm text-text-primary resize-y shadow-sm",
             "placeholder:text-text-muted",
             "focus:outline-none focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/20",
             "transition-all duration-200",

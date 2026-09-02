@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -133,8 +134,8 @@ export default function MentorCoursesPage() {
             course.status === "PUBLISHED"
               ? "bg-emerald-500/10 text-emerald-400"
               : course.status === "DRAFT"
-              ? "bg-amber-500/10 text-amber-400"
-              : "bg-primary-700 text-text-muted"
+              ? "bg-amber-500/10 text-amber-500"
+              : "bg-surface-secondary border border-border-secondary text-text-muted"
           )}
         >
           {course.status}
@@ -188,7 +189,7 @@ export default function MentorCoursesPage() {
         </div>
 
         {loading ? (
-          <p className="text-text-muted">Loading...</p>
+          <PageLoader />
         ) : (
           <DataTable
             columns={columns}
@@ -208,8 +209,8 @@ export default function MentorCoursesPage() {
             />
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-text-secondary">Deskripsi</label>
-              <textarea
-                className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                <textarea
+                  className="w-full bg-white border border-border-primary rounded-xl px-4 py-2.5 text-sm text-text-primary shadow-sm focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
                 rows={3}
                 value={courseForm.description}
                 onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
@@ -219,7 +220,7 @@ export default function MentorCoursesPage() {
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-text-secondary">Kategori</label>
                 <select
-                  className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                  className="w-full bg-white border border-border-primary rounded-xl px-4 py-2.5 text-sm text-text-primary shadow-sm focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
                   value={courseForm.category_id}
                   onChange={(e) => setCourseForm({ ...courseForm, category_id: e.target.value })}
                 >
@@ -231,7 +232,7 @@ export default function MentorCoursesPage() {
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-text-secondary">Level</label>
                 <select
-                  className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                  className="w-full bg-white border border-border-primary rounded-xl px-4 py-2.5 text-sm text-text-primary shadow-sm focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
                   value={courseForm.level}
                   onChange={(e) => setCourseForm({ ...courseForm, level: e.target.value })}
                 >

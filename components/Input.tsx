@@ -45,7 +45,7 @@ export default function Input({
           id={inputId}
           type={isPassword && showPassword ? "text" : type}
           className={cn(
-            "w-full rounded-xl bg-primary-800 border border-border-primary px-4 py-2.5 text-sm text-text-primary",
+            "w-full rounded-xl bg-white border border-border-primary px-4 py-2.5 text-sm text-text-primary shadow-sm",
             "placeholder:text-text-muted",
             "focus:outline-none focus:border-accent-500/50 focus:ring-1 focus:ring-accent-500/20",
             "transition-all duration-200",

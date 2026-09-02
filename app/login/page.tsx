@@ -49,14 +49,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-primary bg-gradient-hero relative">
-      <div className="absolute inset-0 grid-bg" />
+    <div className="min-h-screen flex items-center justify-center bg-surface-primary relative overflow-hidden">
+      {/* Background Layers matching Landing Page */}
+      <div className="absolute inset-0 bg-gradient-hero pointer-events-none" />
+      <div className="absolute inset-0 grid-bg pointer-events-none" />
+      <div className="absolute top-20 left-[10%] w-72 h-72 bg-accent-600/10 rounded-full blur-3xl animate-float pointer-events-none" />
+      <div className="absolute bottom-20 right-[10%] w-96 h-96 bg-secondary-700/10 rounded-full blur-3xl animate-float pointer-events-none" style={{ animationDelay: "1.5s" }} />
 
-      {/* Floating orbs */}
-      <div className="absolute top-[20%] left-[15%] w-64 h-64 bg-accent-600/8 rounded-full blur-3xl" />
-      <div className="absolute bottom-[20%] right-[15%] w-80 h-80 bg-secondary-700/8 rounded-full blur-3xl" />
-
-      <div className="relative w-full max-w-md mx-4 animate-fade-in-up">
+      <div className="relative w-full max-w-md mx-4 animate-fade-in-up z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 mb-4">
@@ -74,7 +74,7 @@ export default function LoginPage() {
         <div className="glass-card p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {apiError && (
-              <div className="p-3 rounded-xl bg-error-500/10 border border-error-500/20 text-error-400 text-sm text-center">
+              <div className="p-3 rounded-lg bg-red-500 text-white shadow-sm font-medium text-sm text-center">
                 {apiError}
               </div>
             )}
@@ -113,7 +113,7 @@ export default function LoginPage() {
             Belum punya akun?{" "}
             <Link
               href="http://localhost:3000"
-              className="text-accent-400 hover:text-accent-300 font-medium transition-colors"
+              className="text-accent-600 hover:text-accent-700 font-medium transition-colors"
             >
               Daftar sekarang
             </Link>

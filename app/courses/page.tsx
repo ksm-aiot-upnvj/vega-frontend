@@ -71,7 +71,7 @@ export default function CoursesPage() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Search */}
-          <div className="flex-1 flex items-center gap-2 bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5">
+          <div className="flex-1 flex items-center gap-2 bg-white border border-border-primary rounded-md px-4 py-2.5 shadow-sm">
             <Search size={16} className="text-text-muted flex-shrink-0" />
             <input
               type="text"
@@ -90,8 +90,8 @@ export default function CoursesPage() {
                 onClick={() => setSelectedCategory("all")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                   selectedCategory === "all"
-                    ? "bg-accent-500/20 text-accent-300 border border-accent-500/30"
-                    : "bg-primary-800 text-text-muted border border-border-secondary hover:text-text-primary"
+                    ? "bg-accent-100 text-accent-700 border border-accent-200 font-medium"
+                    : "bg-white text-text-secondary border border-border-primary hover:text-text-primary"
                 }`}
               >
                 Semua
@@ -102,8 +102,8 @@ export default function CoursesPage() {
                   onClick={() => setSelectedCategory(cat.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                     selectedCategory === cat.id
-                      ? "bg-accent-500/20 text-accent-300 border border-accent-500/30"
-                      : "bg-primary-800 text-text-muted border border-border-secondary hover:text-text-primary"
+                      ? "bg-accent-100 text-accent-700 border border-accent-200 font-medium"
+                      : "bg-white text-text-secondary border border-border-primary hover:text-text-primary"
                   }`}
                 >
                   {cat.name}

@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -41,7 +42,7 @@ interface Submission {
 
 const LESSON_TYPE_LABEL: Record<string, string> = {
   QUIZ: "Kuis",
-  TASK: "Tugas",
+  TASK: "Absen",
   TEXT: "Teks",
   FILE: "File",
   LINK: "Tautan",
@@ -207,16 +208,16 @@ export default function MentorSubmissionsPage() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="bg-primary-800 border border-border-secondary rounded-lg px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent-500"
+              className="bg-white border border-border-primary rounded-lg px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent-500 shadow-sm"
             >
               <option value="ALL">Semua Tipe</option>
               <option value="QUIZ">Kuis</option>
-              <option value="TASK">Tugas</option>
+              <option value="TASK">Absen</option>
             </select>
             <select
               value={filterCourse}
               onChange={(e) => setFilterCourse(e.target.value)}
-              className="bg-primary-800 border border-border-secondary rounded-lg px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent-500 max-w-[200px] truncate"
+              className="bg-white border border-border-primary rounded-lg px-3 py-1.5 text-sm text-text-primary outline-none focus:border-accent-500 max-w-[200px] truncate shadow-sm"
             >
               {courses.map((c) => (
                 <option key={c} value={c}>
@@ -230,7 +231,7 @@ export default function MentorSubmissionsPage() {
         {/* Submissions list */}
         {loading ? (
           <div className="flex items-center justify-center min-h-[40vh]">
-            <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+            <PageLoader />
           </div>
         ) : filtered.length === 0 ? (
           <div className="glass-card p-12 text-center text-text-muted">
@@ -263,7 +264,7 @@ export default function MentorSubmissionsPage() {
                 >
                   {/* Row header */}
                   <div
-                    className="flex items-center gap-4 p-4 cursor-pointer hover:bg-primary-700/20 transition-colors"
+                    className="flex items-center gap-4 p-4 cursor-pointer hover:bg-primary-50 transition-colors"
                     onClick={() =>
                       setExpanded(isExpanded ? null : sub.submission_id)
                     }
@@ -272,7 +273,7 @@ export default function MentorSubmissionsPage() {
                     <span
                       className={cn(
                         "px-2 py-0.5 rounded text-xs font-semibold flex-shrink-0",
-                        LESSON_TYPE_COLOR[sub.lesson_type] || "bg-primary-700 text-text-muted"
+                        LESSON_TYPE_COLOR[sub.lesson_type] || "bg-primary-100 text-text-muted"
                       )}
                     >
                       {LESSON_TYPE_LABEL[sub.lesson_type] || sub.lesson_type}
@@ -303,7 +304,7 @@ export default function MentorSubmissionsPage() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {sub.score !== null ? (
                         <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400">
-                          <Star size={11} /> {sub.score} / 100
+                          <Star size={11} /> {sub.score} / {sub.lesson_type === "TASK" ? "1" : "100"}
                         </span>
                       ) : needsGrading ? (
                         <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-400">
@@ -343,7 +344,7 @@ export default function MentorSubmissionsPage() {
                                       return (
                                         <div
                                           key={idx}
-                                          className="p-3 bg-primary-800 rounded-xl border border-border-secondary"
+                                          className="p-3 bg-white rounded-xl border border-border-primary shadow-sm"
                                         >
                                           <p className="text-xs text-text-muted mb-1 font-semibold">
                                             Pertanyaan {idx + 1}
@@ -389,7 +390,7 @@ export default function MentorSubmissionsPage() {
                       {sub.lesson_type === "TASK" && (
                         <div>
                           <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                            Status Tugas
+                            Status Absen
                           </p>
                           <span className="flex items-center gap-1.5 text-sm text-emerald-400">
                             <CheckCircle size={14} /> Dikonfirmasi dengan kode yang benar
@@ -404,14 +405,14 @@ export default function MentorSubmissionsPage() {
                             Berikan Nilai
                           </p>
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2 bg-primary-800 border border-border-secondary rounded-xl px-3 py-2">
+                            <div className="flex items-center gap-2 bg-white border border-border-primary shadow-sm rounded-xl px-3 py-2">
                               <Star size={14} className="text-amber-400" />
                               <input
                                 type="number"
                                 min="0"
-                                max="100"
+                                max={sub.lesson_type === "TASK" ? "1" : "100"}
                                 step="1"
-                                placeholder="0–100"
+                                placeholder={sub.lesson_type === "TASK" ? "0–1" : "0–100"}
                                 value={scores[sub.submission_id] ?? (sub.score !== null ? String(sub.score) : "")}
                                 onChange={(e) =>
                                   setScores((prev) => ({
@@ -421,7 +422,7 @@ export default function MentorSubmissionsPage() {
                                 }
                                 className="w-16 bg-transparent text-sm text-text-primary outline-none"
                               />
-                              <span className="text-xs text-text-muted">/ 100</span>
+                              <span className="text-xs text-text-muted">/ {sub.lesson_type === "TASK" ? "1" : "100"}</span>
                             </div>
                             <Button
                               size="sm"

@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -118,14 +119,14 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
     }));
   };
 
-  if (loading) return <DashboardLayout role="MENTOR"><div className="text-text-muted">Loading...</div></DashboardLayout>;
+  if (loading) return <DashboardLayout role="MENTOR"><PageLoader /></DashboardLayout>;
   if (!course) return <DashboardLayout role="MENTOR"><div className="text-text-muted">Course tidak ditemukan</div></DashboardLayout>;
 
   return (
     <DashboardLayout role="MENTOR">
       <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
         <div className="flex items-center gap-4">
-          <Link href="/mentor/courses" className="p-2 rounded-xl bg-primary-800 text-text-muted hover:text-text-primary transition-colors">
+          <Link href="/mentor/courses" className="p-2 rounded-xl bg-white border border-border-primary shadow-sm text-text-muted hover:text-text-primary transition-colors">
             <ArrowLeft size={20} />
           </Link>
           <div className="flex-1">
@@ -172,7 +173,7 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                     <button
                       type="button"
                       onClick={() => setOpenCalendarId(openCalendarId === mod.id ? null : mod.id)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-secondary hover:border-amber-500 hover:text-amber-400 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white shadow-sm border border-border-secondary text-xs text-text-secondary hover:border-amber-500 hover:text-amber-500 transition-colors"
                     >
                       <CalendarDays size={13} className="text-amber-400" />
                       <span className="text-xs font-semibold text-text-primary">
@@ -212,7 +213,7 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
 
               <div className="space-y-3 pl-8">
                 {mod.lessons.map((lesson, lIndex) => (
-                  <div key={lesson.id} className="bg-primary-800 rounded-xl p-4 border border-border-secondary flex items-start gap-3 group">
+                  <div key={lesson.id} className="bg-surface-secondary rounded-xl p-4 border border-border-secondary flex items-start gap-3 group">
                     <GripVertical size={16} className="text-text-muted mt-2 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center gap-2">
@@ -248,7 +249,7 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                       {lesson.type === 'task' && (
                         <div className="space-y-3 border-t border-border-secondary pt-3 mt-3">
                           <Input 
-                            placeholder="Tulis instruksi tugas di sini..." 
+                            placeholder="Tulis instruksi absen di sini..." 
                             className="text-sm w-full"
                             value={lesson.content || ""}
                             onChange={(e) => setModules(modules.map(m => m.id === mod.id ? {...m, lessons: m.lessons.map(l => l.id === lesson.id ? {...l, content: e.target.value} : l)} : m))}
@@ -315,19 +316,19 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
 
                 <div className="flex items-center gap-2 pt-2">
                   <span className="text-sm font-medium text-text-muted mr-2">Tambah:</span>
-                  <button onClick={() => addLesson(mod.id, 'text')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-accent-500 transition-colors">
+                  <button onClick={() => addLesson(mod.id, 'text')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-border-primary shadow-sm text-xs text-text-secondary hover:border-accent-500 hover:text-accent-500 transition-colors">
                     <Type size={14} className="text-accent-400" /> Teks
                   </button>
-                  <button onClick={() => addLesson(mod.id, 'file')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-blue-500 transition-colors">
+                  <button onClick={() => addLesson(mod.id, 'file')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-border-primary shadow-sm text-xs text-text-secondary hover:border-blue-500 hover:text-blue-500 transition-colors">
                     <FileText size={14} className="text-blue-400" /> File
                   </button>
-                  <button onClick={() => addLesson(mod.id, 'link')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-purple-500 transition-colors">
+                  <button onClick={() => addLesson(mod.id, 'link')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-border-primary shadow-sm text-xs text-text-secondary hover:border-purple-500 hover:text-purple-500 transition-colors">
                     <LinkIcon size={14} className="text-purple-400" /> Link
                   </button>
-                  <button onClick={() => addLesson(mod.id, 'task')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-amber-500 transition-colors">
-                    <CheckSquare size={14} className="text-amber-400" /> Tugas
+                  <button onClick={() => addLesson(mod.id, 'task')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-border-primary shadow-sm text-xs text-text-secondary hover:border-amber-500 hover:text-amber-500 transition-colors">
+                    <CheckSquare size={14} className="text-amber-400" /> Absen
                   </button>
-                  <button onClick={() => addLesson(mod.id, 'quiz')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-primary hover:border-rose-500 transition-colors">
+                  <button onClick={() => addLesson(mod.id, 'quiz')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-border-primary shadow-sm text-xs text-text-secondary hover:border-rose-500 hover:text-rose-500 transition-colors">
                     <HelpCircle size={14} className="text-rose-400" /> Quiz
                   </button>
                 </div>

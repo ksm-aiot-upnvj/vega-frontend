@@ -1,5 +1,7 @@
 "use client";
 
+import { PageLoader } from "@/components/LoadingState";
+
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import Button from "@/components/Button";
@@ -80,7 +82,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) return <DashboardLayout><div className="text-text-muted">Loading...</div></DashboardLayout>;
+  if (loading) return <DashboardLayout><PageLoader /></DashboardLayout>;
   if (!user) return <DashboardLayout><div className="text-text-muted">Gagal memuat pengguna</div></DashboardLayout>;
 
   return (
@@ -89,18 +91,18 @@ export default function ProfilePage() {
         {/* Profile Card */}
         <div className="glass-card p-0 overflow-hidden">
           {/* Banner */}
-          <div className="h-32 bg-gradient-purple relative">
+          <div className="h-32 bg-accent-500 relative">
             <div className="absolute inset-0 dot-pattern opacity-20" />
           </div>
 
           {/* Avatar & Info */}
           <div className="px-6 pb-6">
-            <div className="flex flex-col sm:flex-row gap-4 sm:items-end -mt-10 relative z-10">
-              <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-accent-600 to-secondary-500 text-white text-2xl font-bold border-4 border-surface-primary shadow-lg flex-shrink-0">
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-end relative z-10">
+              <div className="-mt-12 flex items-center justify-center w-24 h-24 rounded-2xl bg-white text-accent-500 text-3xl font-bold border-4 border-surface-primary shadow-lg flex-shrink-0">
                 {getInitials(user.name)}
               </div>
-              <div className="flex-1 pb-1">
-                <h1 className="text-xl font-bold text-text-primary">
+              <div className="flex-1 pb-2">
+                <h1 className="text-2xl font-bold text-text-primary">
                   {user.name}
                 </h1>
                 <p className="text-sm text-text-muted">{user.email}</p>
@@ -123,7 +125,7 @@ export default function ProfilePage() {
           </div>
 
           {isEditingPassword ? (
-            <div className="space-y-4 p-4 rounded-xl bg-primary-800/30 border border-border-secondary">
+            <div className="space-y-4 p-4 rounded-xl bg-surface-primary border border-border-primary">
               <h3 className="text-sm font-medium text-text-primary mb-2">Ubah Password</h3>
               <Input
                 label="Password Lama"
@@ -172,14 +174,14 @@ export default function ProfilePage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-primary-800/50"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-surface-secondary border border-border-secondary"
                 >
-                  <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary-700">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-surface-primary">
                     <item.icon size={16} className="text-text-muted" />
                   </div>
                   <div>
                     <p className="text-xs text-text-muted">{item.label}</p>
-                    <p className="text-sm text-text-primary font-medium">
+                    <p className="text-sm text-text-secondary font-medium">
                       {item.value}
                     </p>
                   </div>
@@ -201,7 +203,7 @@ export default function ProfilePage() {
               {enrollments.map((enrollment) => (
                 <div
                   key={enrollment.id}
-                  className="flex items-center gap-4 p-3 rounded-xl bg-primary-800/50"
+                  className="flex items-center gap-4 p-3 rounded-xl bg-white border border-border-primary shadow-sm"
                 >
                   <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent-500/10 text-accent-400 flex-shrink-0">
                     <BookOpen size={18} />

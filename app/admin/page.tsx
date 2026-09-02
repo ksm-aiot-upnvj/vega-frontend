@@ -97,9 +97,9 @@ export default function AdminDashboard() {
                 .map((course, i) => (
                   <div
                     key={course.id}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-primary-800/50"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-white border border-border-primary shadow-sm"
                   >
-                    <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary-700 text-xs font-bold text-text-muted">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary-50 text-xs font-bold text-text-muted">
                       {i + 1}
                     </span>
                     <div className="flex-1 min-w-0">
@@ -132,9 +132,9 @@ export default function AdminDashboard() {
                 .slice(0, 5).map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-primary-800/50"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white border border-border-primary shadow-sm"
                 >
-                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-accent-600 to-secondary-500 text-white text-xs font-semibold flex-shrink-0">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary-100 text-accent-600 text-xs font-semibold flex-shrink-0">
                     {user.name
                       ? user.name.split(" ").map((w) => w[0]).join("").slice(0, 2)
                       : "-"}

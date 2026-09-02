@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -92,7 +93,7 @@ export default function AdminUsersPage() {
       header: "User",
       render: (user: User) => (
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-accent-600 to-secondary-500 text-white text-xs font-semibold flex-shrink-0">
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary-100 text-accent-600 text-xs font-semibold flex-shrink-0">
             {getInitials(user.name)}
           </div>
           <div>
@@ -178,7 +179,7 @@ export default function AdminUsersPage() {
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 flex items-center gap-2 bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5">
+          <div className="flex-1 flex items-center gap-2 bg-white border border-border-primary shadow-sm rounded-xl px-4 py-2.5">
             <Search size={16} className="text-text-muted flex-shrink-0" />
             <input
               type="text"
@@ -197,7 +198,7 @@ export default function AdminUsersPage() {
                   "px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer",
                   roleFilter === role
                     ? "bg-accent-500/20 text-accent-300 border border-accent-500/30"
-                    : "bg-primary-800 text-text-muted border border-border-secondary hover:text-text-primary"
+                    : "bg-white text-text-muted border border-border-primary hover:text-text-primary shadow-sm"
                 )}
               >
                 {role === "all" ? "Semua" : role}
@@ -212,7 +213,7 @@ export default function AdminUsersPage() {
         </p>
 
         {loading ? (
-          <p className="text-text-muted">Loading...</p>
+          <PageLoader />
         ) : (
           <DataTable
             columns={columns}
@@ -239,7 +240,7 @@ export default function AdminUsersPage() {
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-text-secondary">Interest</label>
               <select
-                className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                className="w-full bg-white border border-border-primary shadow-sm rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
                 value={editForm.interest}
                 onChange={(e) => setEditForm({ ...editForm, interest: e.target.value })}
               >
@@ -259,7 +260,7 @@ export default function AdminUsersPage() {
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-text-secondary">Role</label>
               <select
-                className="w-full bg-primary-800 border border-border-secondary rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
+                className="w-full bg-white border border-border-primary shadow-sm rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 transition-all"
                 value={editForm.role}
                 onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
               >

@@ -56,8 +56,8 @@ export default function LandingPage() {
 
             {/* Subtitle */}
             <p className="text-lg lg:text-xl text-text-muted max-w-2xl mx-auto mb-10 animate-fade-in-up" style={{ animationDelay: "0.1s" }}>
-              VEGA adalah platform pembelajaran terstruktur untuk anggota KSM IoT & AI.
-              Ikuti learning path, kuasai materi, dan kembangkan skill-mu bersama mentor terbaik.
+              VEGA adalah platform pembelajaran terstruktur untuk anggota KSM AIoT.
+              Ikuti learning path, kuasai materi, dan kembangkan skill-mu.
             </p>
 
             {/* CTA Buttons */}
@@ -84,7 +84,7 @@ export default function LandingPage() {
               { label: "Courses", value: "12+", icon: BookOpen },
               { label: "Anggota Aktif", value: "60+", icon: Users },
               { label: "Materi", value: "100+", icon: GraduationCap },
-              { label: "Quiz & Tugas", value: "50+", icon: BarChart3 },
+              { label: "Quiz & Absen", value: "50+", icon: BarChart3 },
             ].map((stat) => (
               <div
                 key={stat.label}

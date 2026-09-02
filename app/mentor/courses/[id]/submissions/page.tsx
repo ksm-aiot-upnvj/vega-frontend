@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import { useState, useEffect } from "react";
 import { use } from "react";
@@ -64,7 +65,7 @@ export default function SubmissionsPage({
         <div className="flex items-center gap-4">
           <Link
             href={`/mentor/courses/${id}`}
-            className="p-2 rounded-xl bg-primary-800 text-text-muted hover:text-text-primary transition-colors"
+            className="p-2 rounded-xl bg-white border border-border-primary shadow-sm text-text-muted hover:text-text-primary transition-colors"
           >
             <ArrowLeft size={20} />
           </Link>
@@ -78,7 +79,7 @@ export default function SubmissionsPage({
 
         {loading ? (
           <div className="flex items-center justify-center min-h-[40vh]">
-            <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin" />
+            <PageLoader />
           </div>
         ) : submissions.length === 0 ? (
           <div className="glass-card p-12 text-center text-text-muted">
@@ -105,7 +106,7 @@ export default function SubmissionsPage({
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-primary-800 flex items-center justify-center flex-shrink-0">
+                      <div className="w-9 h-9 rounded-lg bg-surface-secondary border border-border-secondary flex items-center justify-center flex-shrink-0">
                         <Icon size={16} className="text-accent-400" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -170,7 +171,7 @@ export default function SubmissionsPage({
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-muted">Tugas</span>
+                    <span className="text-text-muted">Absen</span>
                     <span className="text-text-primary font-semibold">
                       {submissions.filter((s) => s.lesson_type === "TASK").length}
                     </span>

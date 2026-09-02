@@ -20,9 +20,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "VEGA — Learning Management System",
+  title: "VEGA - AIoT LMS",
   description:
-    "VEGA LMS — Platform pembelajaran internal KSM IoT & AI. Belajar terstruktur, ikuti learning path, dan kembangkan skill-mu.",
+    "VEGA - AIoT LMS",
   keywords: ["LMS", "VEGA", "KSM IoT", "Learning", "Education"],
 };
 

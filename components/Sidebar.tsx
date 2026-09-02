@@ -65,16 +65,16 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen flex flex-col bg-surface-secondary border-r border-border-secondary transition-all duration-300",
+        "fixed left-0 top-0 z-40 h-screen flex flex-col bg-accent-500 transition-all duration-300 shadow-lg",
         collapsed ? "w-[72px]" : "w-[240px]"
       )}
     >
       {/* Logo */}
-      <div className="flex items-center h-16 px-4 border-b border-border-secondary">
+      <div className="flex items-center h-16 px-4 border-b border-white/20">
         <Link href="/dashboard" className="flex items-center gap-3 min-w-0">
           <img src="/logo.png" alt="Vega Logo" className="w-9 h-9 object-contain flex-shrink-0" />
           {!collapsed && (
-            <span className="text-lg font-bold text-gradient truncate">
+            <span className="text-lg font-bold text-white truncate">
               VEGA
             </span>
           )}
@@ -98,15 +98,15 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-accent-500/10 text-accent-400 border border-accent-500/20"
-                  : "text-text-muted hover:text-text-primary hover:bg-primary-700",
+                  ? "bg-white/20 text-white font-semibold shadow-sm"
+                  : "text-white/80 hover:text-white hover:bg-white/10",
                 collapsed && "justify-center px-0"
               )}
               title={collapsed ? item.label : undefined}
             >
               <item.icon
                 size={20}
-                className={cn("flex-shrink-0", isActive && "text-accent-400")}
+                className={cn("flex-shrink-0", isActive ? "text-white" : "text-white/80")}
               />
               {!collapsed && <span className="truncate">{item.label}</span>}
             </Link>
@@ -115,7 +115,7 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
       </nav>
 
       {/* Logout */}
-      <div className="p-3 border-t border-border-secondary">
+      <div className="p-3 border-t border-white/20">
         <button
           onClick={() => {
             if (typeof window !== "undefined") {
@@ -126,7 +126,7 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
             }
           }}
           className={cn(
-            "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-error-400 hover:bg-error-500/10 transition-all duration-200",
+            "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200",
             collapsed && "justify-center px-0"
           )}
         >
@@ -138,7 +138,7 @@ export default function Sidebar({ role, collapsed, onToggle }: SidebarProps) {
       {/* Collapse Toggle */}
       <button
         onClick={onToggle}
-        className="absolute -right-3 top-20 flex items-center justify-center w-6 h-6 rounded-full bg-surface-elevated border border-border-primary text-text-muted hover:text-text-primary hover:border-accent-500/30 transition-all cursor-pointer"
+        className="absolute -right-3 top-20 flex items-center justify-center w-6 h-6 rounded-full bg-white border border-border-primary text-text-muted hover:text-accent-600 hover:border-accent-400 transition-all cursor-pointer shadow-sm"
       >
         {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>

@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
@@ -40,7 +41,7 @@ const LESSON_TYPE_LABEL: Record<string, string> = {
   PDF: "PDF",
   FILE: "File / Dokumen",
   LINK: "Tautan Eksternal",
-  TASK: "Tugas",
+  TASK: "Absen",
   QUIZ: "Kuis",
 };
 
@@ -140,7 +141,7 @@ export default function LessonPage({
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-3">
-            <div className="w-10 h-10 border-2 border-accent-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <PageLoader />
             <p className="text-text-muted">Memuat materi...</p>
           </div>
         </div>
@@ -204,7 +205,7 @@ export default function LessonPage({
                           "flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors",
                           isActive
                             ? "bg-accent-500/10 text-accent-300 border-r-2 border-accent-500"
-                            : "text-text-muted hover:text-text-primary hover:bg-primary-700/30"
+                            : "text-text-muted hover:text-text-primary hover:bg-primary-50"
                         )}
                       >
                         {isThisCompleted ? (
@@ -246,7 +247,7 @@ export default function LessonPage({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-primary-700 text-text-muted">
+                  <span className="text-xs font-medium px-2 py-0.5 rounded bg-primary-100 text-text-muted">
                     {lessonLabel}
                   </span>
                   {completed && (
@@ -303,7 +304,7 @@ export default function LessonPage({
             {(currentLesson.lesson_type === "FILE" || currentLesson.lesson_type === "LINK") && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 p-4 bg-surface-secondary border border-border-secondary rounded-xl">
-                  <div className="w-10 h-10 rounded-lg bg-primary-800 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-surface-secondary border border-border-primary shadow-sm flex items-center justify-center flex-shrink-0">
                     {currentLesson.lesson_type === "FILE"
                       ? <FileText size={20} className="text-blue-400" />
                       : <LinkIcon size={20} className="text-purple-400" />
@@ -516,7 +517,7 @@ export default function LessonPage({
                               </div>
                             ) : (
                               <textarea
-                                className="w-full bg-primary-900 border border-border-secondary rounded-lg p-3 text-sm focus:border-accent-500 outline-none resize-none"
+                                  className="w-full bg-white border border-border-primary shadow-sm rounded-lg p-3 text-sm focus:border-accent-500 outline-none resize-none"
                                 rows={4}
                                 placeholder="Ketik jawaban Anda di sini..."
                                 disabled={completed}

@@ -1,4 +1,5 @@
 "use client";
+import { PageLoader } from "@/components/LoadingState";
 
 import { use, useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -99,7 +100,7 @@ export default function CourseDetailPage({
   };
 
   if (loading) {
-    return <DashboardLayout><div className="text-text-muted">Loading...</div></DashboardLayout>;
+    return <DashboardLayout><PageLoader /></DashboardLayout>;
   }
 
   if (!course) {
@@ -124,13 +125,13 @@ export default function CourseDetailPage({
               <div className="flex items-center gap-2 mb-3">
                 <span
                   className={cn(
-                    "px-2.5 py-1 rounded-lg text-xs font-medium bg-primary-900/70 backdrop-blur-sm border border-border-primary",
+                    "px-2.5 py-1 rounded-lg text-xs font-medium bg-white shadow-sm",
                     LEVEL_COLORS[course.level]
                   )}
                 >
                   {LEVEL_LABELS[course.level]}
                 </span>
-                <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-accent-500/20 text-accent-300 backdrop-blur-sm">
+                <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
                   {course.category?.name || "Umum"}
                 </span>
               </div>
@@ -222,10 +223,10 @@ export default function CourseDetailPage({
                 {/* Module Header */}
                 <button
                   onClick={() => toggleModule(module.id)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-primary-700/30 transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between p-4 hover:bg-primary-50 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-secondary-700 text-sm font-bold text-secondary-200">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-100 text-sm font-bold text-text-primary">
                       {module.order}
                     </div>
                     <div className="text-left">
@@ -261,14 +262,14 @@ export default function CourseDetailPage({
                               toast("error", "Error", "Kamu harus enroll course ini terlebih dahulu.");
                             }
                           }}
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-primary-700/20 transition-colors border-b border-border-secondary last:border-0"
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-primary-50 transition-colors border-b border-border-secondary last:border-0"
                         >
                           <div
                             className={cn(
                               "flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0",
                               isLessonCompleted
                                 ? "bg-emerald-500/10 text-emerald-400"
-                                : "bg-primary-700 text-text-muted"
+                                : "bg-primary-100 text-text-muted"
                             )}
                           >
                             {isLessonCompleted ? (
