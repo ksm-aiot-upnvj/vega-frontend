@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import CourseCard from "@/components/CourseCard";
 import ProgressBar from "@/components/ProgressBar";
+import DeadlineCalendar, { DeadlineEvent } from "@/components/DeadlineCalendar";
 import { getGreeting } from "@/lib/utils";
-import { getCurrentUser, getMyEnrollments, getCourses } from "@/lib/api";
+import { getCurrentUser, getMyEnrollments, getCourses, getDeadlines } from "@/lib/api";
 import type { User } from "@/types/user";
 import type { Enrollment, Course } from "@/types/course";
 import { useToast } from "@/components/Toast";
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [mentorCourses, setMentorCourses] = useState<Course[]>([]);
+  const [deadlineEvents, setDeadlineEvents] = useState<DeadlineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -30,14 +32,16 @@ export default function DashboardPage() {
     Promise.all([
       getCurrentUser(),
       getMyEnrollments().catch(() => []),
-      getCourses().catch(() => [])
+      getCourses().catch(() => []),
+      getDeadlines().catch(() => []),
     ])
-    .then(([userData, enrollmentsData, coursesData]) => {
+    .then(([userData, enrollmentsData, coursesData, deadlinesData]) => {
       setUser(userData);
       setEnrollments(enrollmentsData);
       if (userData.role === 'MENTOR') {
         setMentorCourses(coursesData.filter(c => c.mentor_name === userData.name));
       }
+      setDeadlineEvents(deadlinesData);
     })
     .catch(() => {
       toast("error", "Error", "Gagal memuat data dashboard");
@@ -159,50 +163,59 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Enrolled Courses */}
-        <div>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold text-text-primary">
-              {user.role === 'MENTOR' ? 'Course Buatanku' : 'Course Saya'}
-            </h2>
-            <Link
-              href={user.role === 'MENTOR' ? "/mentor/courses" : "/courses"}
-              className="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
-            >
-              Lihat Semua <ArrowRight size={14} />
-            </Link>
+        {/* Course Saya + Kalender Deadline — side by side */}
+        <div className="flex flex-col lg:flex-row gap-5">
+          {/* Left: Course list (50%) */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-text-primary">
+                {user.role === 'MENTOR' ? 'Course Buatanku' : 'Course Saya'}
+              </h2>
+              <Link
+                href={user.role === 'MENTOR' ? "/mentor/courses" : "/courses"}
+                className="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
+              >
+                Lihat Semua <ArrowRight size={14} />
+              </Link>
+            </div>
+
+            {/* Horizontal scrollable course strip */}
+            {user.role === 'MENTOR' ? (
+              mentorCourses.length === 0 ? (
+                <p className="text-sm text-text-muted">Kamu belum membuat course apapun.</p>
+              ) : (
+                <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+                  {mentorCourses.map((course) => (
+                    <div key={course.id} className="snap-start flex-shrink-0 w-64">
+                      <CourseCard course={course} mentorEditMode={true} />
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              enrollments.length === 0 ? (
+                <p className="text-sm text-text-muted">Kamu belum terdaftar di course apapun.</p>
+              ) : (
+                <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+                  {enrollments.map((enrollment) =>
+                    enrollment.course ? (
+                      <div key={enrollment.id} className="snap-start flex-shrink-0 w-64">
+                        <CourseCard
+                          course={enrollment.course}
+                          progress={enrollment.progress_percentage}
+                        />
+                      </div>
+                    ) : null
+                  )}
+                </div>
+              )
+            )}
           </div>
-          {user.role === 'MENTOR' ? (
-            mentorCourses.length === 0 ? (
-              <p className="text-sm text-text-muted">Kamu belum membuat course apapun.</p>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
-                {mentorCourses.slice(0, 3).map((course) => (
-                  <CourseCard
-                    key={course.id}
-                    course={course}
-                    mentorEditMode={true}
-                  />
-                ))}
-              </div>
-            )
-          ) : (
-            enrollments.length === 0 ? (
-              <p className="text-sm text-text-muted">Kamu belum terdaftar di course apapun.</p>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
-                {enrollments.slice(0, 3).map((enrollment) =>
-                  enrollment.course ? (
-                    <CourseCard
-                      key={enrollment.id}
-                      course={enrollment.course}
-                      progress={enrollment.progress_percentage}
-                    />
-                  ) : null
-                )}
-              </div>
-            )
-          )}
+
+          {/* Right: Deadline Calendar (50%) */}
+          <div className="lg:w-72 xl:w-80 flex-shrink-0">
+            <DeadlineCalendar events={deadlineEvents} />
+          </div>
         </div>
 
         {/* Recent Activity */}

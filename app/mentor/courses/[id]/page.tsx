@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
-import { Plus, GripVertical, Type, CheckSquare, Trash2, ArrowLeft, Link as LinkIcon, FileText, HelpCircle } from "lucide-react";
+import DeadlineCalendar from "@/components/DeadlineCalendar";
+import { Plus, GripVertical, Type, CheckSquare, Trash2, ArrowLeft, Link as LinkIcon, FileText, HelpCircle, CalendarDays, X } from "lucide-react";
 import { getCourseById, saveCourseBuilder } from "@/lib/api";
 import type { CourseWithModules, Module } from "@/types/course";
 import { useToast } from "@/components/Toast";
@@ -20,6 +21,8 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
 
   // Builder state
   const [modules, setModules] = useState<any[]>([]);
+  // Track which module has the calendar picker open
+  const [openCalendarId, setOpenCalendarId] = useState<string | null>(null);
 
   useEffect(() => {
     getCourseById(resolvedParams.id)
@@ -164,14 +167,41 @@ export default function CourseBuilderPage({ params }: { params: Promise<{ id: st
                   />
                 </div>
                 <div className="flex items-center gap-2 ml-2">
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-xs text-text-muted whitespace-nowrap">Deadline:</label>
-                    <input
-                      type="datetime-local"
-                      value={mod.deadline || ""}
-                      onChange={(e) => setModules(modules.map(m => m.id === mod.id ? {...m, deadline: e.target.value} : m))}
-                      className="bg-primary-800 border border-border-secondary rounded-lg px-2 py-1 text-xs text-text-primary focus:border-amber-500 outline-none"
-                    />
+                  {/* Calendar Deadline Picker */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setOpenCalendarId(openCalendarId === mod.id ? null : mod.id)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary-800 border border-border-secondary text-xs text-text-secondary hover:border-amber-500 hover:text-amber-400 transition-colors"
+                    >
+                      <CalendarDays size={13} className="text-amber-400" />
+                      <span>
+                        {mod.deadline
+                          ? new Date(mod.deadline).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+                          : "Set Deadline"}
+                      </span>
+                      {mod.deadline && (
+                        <span
+                          onClick={(e) => { e.stopPropagation(); setModules(modules.map(m => m.id === mod.id ? { ...m, deadline: "" } : m)); }}
+                          className="ml-1 text-text-muted hover:text-error-400"
+                        >
+                          <X size={11} />
+                        </span>
+                      )}
+                    </button>
+                    {openCalendarId === mod.id && (
+                      <div className="absolute right-0 top-9 z-50 bg-surface-secondary border border-border-secondary rounded-xl shadow-xl p-3 w-64">
+                        <DeadlineCalendar
+                          events={[]}
+                          compact
+                          pickedDate={mod.deadline || undefined}
+                          onPickDate={(iso) => {
+                            setModules(modules.map(m => m.id === mod.id ? { ...m, deadline: iso } : m));
+                            setOpenCalendarId(null);
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                   <button onClick={() => removeModule(mod.id)} className="text-error-400 p-2 hover:bg-error-500/10 rounded-lg">
                     <Trash2 size={18} />

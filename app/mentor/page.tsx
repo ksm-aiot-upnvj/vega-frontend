@@ -4,16 +4,18 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import CourseCard from "@/components/CourseCard";
 import Button from "@/components/Button";
-import { getCourses, getCurrentUser } from "@/lib/api";
+import DeadlineCalendar, { DeadlineEvent } from "@/components/DeadlineCalendar";
+import { getCourses, getCurrentUser, getDeadlines } from "@/lib/api";
 import type { Course } from "@/types/course";
 import type { User } from "@/types/user";
 import { useToast } from "@/components/Toast";
-import { Plus, BookOpen, Users, Star, ArrowRight } from "lucide-react";
+import { Plus, BookOpen, Users, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function MentorDashboard() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [deadlineEvents, setDeadlineEvents] = useState<DeadlineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -27,6 +29,12 @@ export default function MentorDashboard() {
       // Filter courses where the mentor is the current user
       const myCourses = allCourses.filter(c => c.mentor_id === user.id);
       setCourses(myCourses);
+      // Fetch all deadlines (modules with deadlines) for the mentor's courses
+      getDeadlines()
+        .then((results) => {
+          setDeadlineEvents(results);
+        })
+        .catch(() => {});
     })
     .catch(() => {
       toast("error", "Error", "Gagal memuat data dashboard");
@@ -100,28 +108,36 @@ export default function MentorDashboard() {
           ))}
         </div>
 
-        {/* My Courses */}
-        <div>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-semibold text-text-primary">
-              Course Saya
-            </h2>
-            <Link
-              href="/mentor/courses"
-              className="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
-            >
-              Lihat Semua <ArrowRight size={14} />
-            </Link>
-          </div>
-          {mentorCourses.length === 0 ? (
-            <p className="text-sm text-text-muted">Kamu belum memiliki course. Mulai buat course barumu!</p>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger">
-              {mentorCourses.slice(0, 3).map((course) => (
-                <CourseCard key={course.id} course={course} />
-              ))}
+        {/* My Courses + Calendar — side by side */}
+        <div className="flex flex-col lg:flex-row gap-5">
+          {/* Left: Course list (scrollable) */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-text-primary">Course Saya</h2>
+              <Link
+                href="/mentor/courses"
+                className="text-sm text-accent-400 hover:text-accent-300 flex items-center gap-1 transition-colors"
+              >
+                Lihat Semua <ArrowRight size={14} />
+              </Link>
             </div>
-          )}
+            {mentorCourses.length === 0 ? (
+              <p className="text-sm text-text-muted">Kamu belum memiliki course. Mulai buat course barumu!</p>
+            ) : (
+              <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+                {mentorCourses.map((course) => (
+                  <div key={course.id} className="snap-start flex-shrink-0 w-64">
+                    <CourseCard course={course} mentorEditMode={true} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Deadline Calendar */}
+          <div className="lg:w-72 xl:w-80 flex-shrink-0">
+            <DeadlineCalendar events={deadlineEvents} />
+          </div>
         </div>
 
         {/* Recent Activity */}

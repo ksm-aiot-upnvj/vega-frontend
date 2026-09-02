@@ -206,6 +206,10 @@ export async function getAssignments(): Promise<AssignmentWithSubmission[]> {
   return apiFetch<AssignmentWithSubmission[]>("/api/v1/assignments/");
 }
 
+export async function getDeadlines(): Promise<{id: string, date: string, title: string, course_title: string}[]> {
+  return apiFetch<{id: string, date: string, title: string, course_title: string}[]>('/api/v1/courses/my/deadlines');
+}
+
 // ============================================
 // Admin API
 // ============================================
