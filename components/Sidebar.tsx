@@ -32,7 +32,7 @@ interface NavItem {
 const memberNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Courses", href: "/courses", icon: BookOpen },
-  { label: "Assignments", href: "/assignments", icon: ClipboardList },
+  { label: "Group", href: "/group", icon: Users },
   { label: "Announcements", href: "/dashboard/announcements", icon: Megaphone },
   { label: "Profile", href: "/profile", icon: User },
 ];
@@ -41,6 +41,7 @@ const mentorNav: NavItem[] = [
   { label: "Dashboard", href: "/mentor", icon: LayoutDashboard },
   { label: "My Courses", href: "/mentor/courses", icon: GraduationCap },
   { label: "Submissions", href: "/mentor/submissions", icon: ClipboardList },
+  { label: "Group", href: "/mentor/group", icon: Users },
   { label: "Announcements", href: "/mentor/announcements", icon: Megaphone },
   { label: "Profile", href: "/profile", icon: User },
 ];
@@ -48,6 +49,7 @@ const mentorNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Group Mapping", href: "/admin/groups", icon: Users },
 ];
 
 const navByRole: Record<UserRole, NavItem[]> = {
